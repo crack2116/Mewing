@@ -1,5 +1,5 @@
 import Overview from "@/components/dashboard/overview";
-import QuickActions from "@/components/dashboard/quick-actions";
+import SystemStatus from "@/components/dashboard/system-status";
 import RecentRequests from "@/components/dashboard/recent-requests";
 
 export default function Home() {
@@ -17,7 +17,7 @@ export default function Home() {
                 <RecentRequests />
               </div>
               <div className="xl:col-span-1">
-                <QuickActions />
+                <SystemStatus />
               </div>
             </div>
         </div>
