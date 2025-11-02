@@ -1,4 +1,4 @@
-import type { ServiceRequest } from './types';
+import type { ServiceRequest, Client } from './types';
 
 export const serviceRequests: ServiceRequest[] = [
   {
@@ -75,3 +75,33 @@ export const overviewData = {
   completedServices: 6,
   pendingRequests: 4,
 };
+
+export const clients: Client[] = [
+    {
+      name: 'Logística Express S.A.C.',
+      ruc: '20123456802',
+      contact: {
+        name: 'Antonio José Delgado',
+        email: 'antonio.delgado@express.com',
+      },
+      address: 'Av. Circunvalación 369, Comas, Lima',
+    },
+    {
+      name: 'Distribuidora Lima Norte S.A.C.',
+      ruc: '20123456789',
+      contact: {
+        name: 'María Elena Rodríguez',
+        email: 'maria.rodriguez@limanorte.com',
+      },
+      address: 'Av. Túpac Amaru 1234, Independencia, Lima',
+    },
+    {
+        name: 'Distribuidora Oeste E.I.R.L.',
+        ruc: '20123456800',
+        contact: {
+            name: 'Jorge Luis Paredes',
+            email: 'jorge.paredes@oeste.com',
+        },
+        address: 'Av. Mariscal Castilla 147, San Juan de Lurigancho, Lima',
+    }
+  ];
