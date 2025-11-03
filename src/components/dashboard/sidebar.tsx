@@ -14,6 +14,7 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const navItems = [
   { href: '/', icon: LayoutGrid, label: 'Panel de Control' },
@@ -31,15 +32,15 @@ export default function Sidebar() {
 
   return (
     <div className="hidden border-r bg-card md:block">
-      <div className="flex h-full max-h-screen flex-col gap-2">
+      <div className="flex h-full max-h-screen flex-col">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <Link href="/" className="flex items-center gap-2 font-semibold font-headline">
             <Truck className="h-6 w-6 text-primary" />
             <span className="">Mewing</span>
           </Link>
         </div>
-        <div className="flex-1">
-          <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+        <ScrollArea className="flex-1">
+          <nav className="grid items-start px-2 py-4 text-sm font-medium lg:px-4">
             {navItems.map(({ href, icon: Icon, label }) => (
               <Link
                 key={label}
@@ -53,7 +54,7 @@ export default function Sidebar() {
               </Link>
             ))}
           </nav>
-        </div>
+        </ScrollArea>
         <div className="mt-auto p-4 border-t">
             <div className="flex items-center gap-3">
                  <Avatar className="h-10 w-10">
