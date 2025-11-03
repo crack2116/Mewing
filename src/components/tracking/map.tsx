@@ -6,7 +6,7 @@ import L, { Icon } from 'leaflet';
 import { Button } from '@/components/ui/button';
 import { Pause } from 'lucide-react';
 import type { ActiveVehicle } from '@/lib/types';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // Fix for default icon path issue with webpack
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -29,15 +29,31 @@ interface MapProps {
 function MapUpdater() {
     const map = useMap();
     useEffect(() => {
-        map.invalidateSize();
+        const timer = setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+
+        return () => clearTimeout(timer);
     }, [map]);
     return null;
 }
 
 export default function Map({ vehicles }: MapProps) {
+  // By adding a key to the MapContainer, we force React to re-create the component
+  // from scratch when the key changes. This is a robust way to avoid the "Map container
+  // already initialized" error during development with hot-reloading.
+  const [mapKey, setMapKey] = useState(0);
+
+  useEffect(() => {
+    // This effect runs only once on the client after initial mount.
+    // We update the key to ensure we have a stable key for subsequent renders.
+    setMapKey(prevKey => prevKey + 1);
+  }, []);
+
   return (
     <div className="relative h-[400px] lg:h-full w-full rounded-lg overflow-hidden border">
       <MapContainer
+        key={mapKey} // This is the fix.
         center={[-5.18, -80.63]}
         zoom={13}
         scrollWheelZoom={false}
