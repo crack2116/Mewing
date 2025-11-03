@@ -31,7 +31,7 @@ function MapUpdater() {
     useEffect(() => {
         const timer = setTimeout(() => {
             map.invalidateSize();
-        }, 100); // A small delay ensures the container has the correct size
+        }, 100); 
 
         return () => clearTimeout(timer);
     }, [map]);
@@ -39,22 +39,16 @@ function MapUpdater() {
 }
 
 export default function Map({ vehicles }: MapProps) {
-  // By adding a key to the MapContainer, we force React to re-create the component
-  // from scratch when the key changes. This is a robust way to avoid the "Map container
-  // already initialized" error during development with hot-reloading.
-  const [mapKey, setMapKey] = useState(Date.now());
+  const [mapKey, setMapKey] = useState(0);
 
   useEffect(() => {
-    // This effect runs only once on the client after initial mount.
-    // In a development environment with hot-reloading, this will trigger on each reload,
-    // generating a new key and forcing the MapContainer to be unmounted and remounted.
-    setMapKey(Date.now());
+    setMapKey(prevKey => prevKey + 1);
   }, []);
 
   return (
     <div className="relative h-[400px] lg:h-full w-full rounded-lg overflow-hidden border">
       <MapContainer
-        key={mapKey} // This is the fix.
+        key={mapKey}
         center={[-5.18, -80.63]}
         zoom={13}
         scrollWheelZoom={false}
