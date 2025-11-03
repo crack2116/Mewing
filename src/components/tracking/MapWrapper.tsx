@@ -8,7 +8,7 @@ import { Pause, Play } from 'lucide-react';
 import type { ActiveVehicle } from '@/lib/types';
 
 const customIcon = new Icon({
-  iconUrl: `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/><path d="M12 2L12 7" /><path d="M12 13L12 22" /><path d="M17 5L12 10L7 5" /><path d="M17 19L12 14L7 19" /></svg>')}`,
+  iconUrl: `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="48" height="48"><path d="M56.31,33.17l-1.9-9.48a4,4,0,0,0-4-3.19H40V16.33a4,4,0,0,0-4-4H10a4,4,0,0,0-4,4v24a4,4,0,0,0,4,4H36a4,4_0,0,0,4-4V35.5h8.41a4,4,0,0,0,4-3.19L56,26.5" fill="hsl(var(--primary))" /><path d="M32,16.33V40.33H10V16.33H32m4-4H10a4,4,0,0,0-4,4v24a4,4,0,0,0,4,4H36a4,4,0,0,0,4-4V16.33a4,4,0,0,0-4-4Z" fill="hsl(var(--primary))" /><path d="M40,20.5H50.41a4,4,0,0,1,4,3.19l1.9,9.48-1.9,5.81a4,4,0,0,1-4,3.19H40Z" fill="hsl(var(--primary))" /><circle cx="15" cy="40.33" r="5" fill="white"/><circle cx="31" cy="40.33" r="5" fill="white"/></svg>')}`,
   iconSize: [48, 48],
   iconAnchor: [24, 48],
   popupAnchor: [0, -48],
@@ -26,14 +26,10 @@ export default function MapWrapper({ vehicles: initialVehicles }: MapProps) {
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    // Ensure this runs only on the client
-    if (typeof window === 'undefined' || !mapContainerRef.current) {
-      return;
-    }
+    if (!mapContainerRef.current) return;
+    if (mapRef.current) return;
 
-    // Initialize map only once
-    if (!mapRef.current) {
-        // Fix for default icon issue in Leaflet with webpack
+    if (typeof window !== 'undefined') {
         delete (L.Icon.Default.prototype as any)._getIconUrl;
         L.Icon.Default.mergeOptions({
             iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -59,7 +55,9 @@ export default function MapWrapper({ vehicles: initialVehicles }: MapProps) {
             markerRefs.current.set(vehicle.id, marker);
         });
     }
+  }, []);
 
+  useEffect(() => {
     const interval = setInterval(() => {
       if (!isPaused) {
         setVehicles((currentVehicles) =>
@@ -76,12 +74,9 @@ export default function MapWrapper({ vehicles: initialVehicles }: MapProps) {
 
     return () => {
       clearInterval(interval);
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
     };
-  }, [initialVehicles, isPaused]);
+  }, [isPaused]);
+
 
   useEffect(() => {
     vehicles.forEach((vehicle) => {
@@ -91,6 +86,15 @@ export default function MapWrapper({ vehicles: initialVehicles }: MapProps) {
       }
     });
   }, [vehicles]);
+
+  useEffect(() => {
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    }
+  }, [])
 
   return (
     <div className="relative h-[400px] lg:h-full w-full rounded-lg overflow-hidden border">
