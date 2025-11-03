@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { serviceRequests } from "@/lib/data";
 import type { ServiceRequest } from "@/lib/types";
-import { PlusCircle, MoreHorizontal, UserPlus, Pencil, Copy, XCircle, Calendar as CalendarIcon } from "lucide-react";
+import { PlusCircle, MoreHorizontal, UserPlus, Pencil, Copy, XCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,19 +35,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-
 
 export default function ServicesPage() {
-  const [date, setDate] = useState<Date>();
+  const [date, setDate] = useState<Date | undefined>(new Date());
 
   const getStatusVariant = (status: ServiceRequest['status']) => {
     switch (status) {
@@ -96,42 +87,22 @@ export default function ServicesPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                    <Label htmlFor="service-date">Fecha del Servicio</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !date && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {date ? format(date, "PPP") : <span>Elige una fecha</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
+                        <Label htmlFor="service-date">Fecha del Servicio</Label>
                         <Calendar
                           mode="single"
                           selected={date}
                           onSelect={setDate}
-                          initialFocus
+                          className="rounded-md border"
                         />
-                      </PopoverContent>
-                    </Popover>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="client">Cliente</Label>
                         <Input id="client" placeholder="Test Client" />
                     </div>
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="special-requirements">Requerimientos Especiales</Label>
-                    <Textarea id="special-requirements" placeholder="ej., Artículos frágiles, requiere refrigeración" />
-                </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="w-full">Enviar Solicitud</Button>
+              <Button type="submit" className="w-full">Solicitud</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
