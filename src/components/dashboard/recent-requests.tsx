@@ -55,7 +55,7 @@ export default function RecentRequests() {
             {serviceRequests.slice(0, 4).map((request) => (
               <TableRow key={request.id} className="border-b-white/10">
                 <TableCell>
-                  <div className="font-medium">{request.client.id}</div>
+                  <div className="font-medium">{request.client.name}</div>
                   <div className="text-sm text-muted-foreground">{request.details.subtitle}</div>
                 </TableCell>
                 <TableCell>

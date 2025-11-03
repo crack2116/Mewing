@@ -26,6 +26,7 @@ export default function Overview() {
       iconBg: "bg-green-500/10",
       iconColor: "text-green-400",
       cardBg: "bg-green-500/5",
+      textColor: "text-green-400"
     },
     {
       title: "Servicios en Curso",
@@ -35,6 +36,7 @@ export default function Overview() {
       iconBg: "bg-blue-500/10",
       iconColor: "text-blue-400",
       cardBg: "bg-blue-500/5",
+      textColor: "text-blue-400"
     },
     {
       title: "Servicios Completados (Mes)",
@@ -44,6 +46,7 @@ export default function Overview() {
       iconBg: "bg-purple-500/10",
       iconColor: "text-purple-400",
       cardBg: "bg-purple-500/5",
+      textColor: "text-purple-400"
     },
     {
       title: "Solicitudes Pendientes",
@@ -53,12 +56,13 @@ export default function Overview() {
       iconBg: "bg-orange-500/10",
       iconColor: "text-orange-400",
       cardBg: "bg-orange-500/5",
+      textColor: "text-orange-400"
     },
   ];
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-      {overviewItems.map((item, index) => (
+      {overviewItems.map((item) => (
          <Card key={item.title} className={`border-none ${item.cardBg}`}>
             <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{item.title}</CardTitle>
@@ -70,7 +74,10 @@ export default function Overview() {
               <div className="text-4xl font-bold font-headline text-card-foreground">
                 {item.value}
               </div>
-              <p className="text-xs text-muted-foreground mt-2">{item.description}</p>
+              <p className={`text-xs ${item.textColor} mt-2 flex items-center`}>
+                { item.description.startsWith('A') || item.description.startsWith('E') ? <span className="h-2 w-2 rounded-full bg-current mr-2"></span> : null }
+                {item.description}
+              </p>
             </CardContent>
           </Card>
       ))}
