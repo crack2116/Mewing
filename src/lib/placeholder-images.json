@@ -5,6 +5,12 @@
       "description": "Avatar for the current user",
       "imageUrl": "https://images.unsplash.com/photo-1600180758890-6b94519a8ba6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwZXJzb24lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjIwNzc3MTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "person portrait"
+    },
+    {
+      "id": "profile-avatar",
+      "description": "Avatar for the profile page",
+      "imageUrl": "https://images.unsplash.com/photo-1613376023733-0a73315d9b06?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxhbmltZSUyMGNoYXJhY3RlcnxlbnwwfHx8fDE3NjIwNzAyNjV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "anime character"
     }
   ]
 }
