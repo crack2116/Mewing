@@ -1,5 +1,4 @@
 import Overview from "@/components/dashboard/overview";
-import SystemStatus from "@/components/dashboard/system-status";
 import RecentRequests from "@/components/dashboard/recent-requests";
 import SalesChart from "@/components/dashboard/sales-chart";
 
@@ -10,7 +9,7 @@ export default function Home() {
         <h1 className="text-lg font-semibold md:text-2xl font-headline">Panel de Control</h1>
       </div>
       
-      <div className="flex flex-col gap-6 mt-4">
+      <div className="flex flex-col gap-6 mt-6">
         <Overview />
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

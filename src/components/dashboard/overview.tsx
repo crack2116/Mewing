@@ -4,12 +4,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { DollarSign, Users, CheckCircle, Clock } from "lucide-react";
+import { DollarSign, Users, CircleCheckBig, Clock } from "lucide-react";
 import { overviewData } from "@/lib/data";
 
 export default function Overview() {
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('es-ES', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
@@ -36,7 +36,7 @@ export default function Overview() {
     },
     {
       title: "Servicios Completados",
-      icon: CheckCircle,
+      icon: CircleCheckBig,
       value: `+${overviewData.completedServices}`,
       description: "+19% desde el último mes",
       iconBg: "bg-blue-100",
