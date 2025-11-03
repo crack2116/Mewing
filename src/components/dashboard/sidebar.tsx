@@ -38,9 +38,9 @@ export default function Sidebar() {
             <span className="">Mewing</span>
           </Link>
         </div>
-        <div className="flex-1">
+        <div className="flex-1 overflow-auto py-2">
           <ScrollArea className="h-full">
-            <nav className="grid items-start px-2 py-4 text-sm font-medium lg:px-4">
+            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               {navItems.map(({ href, icon: Icon, label }) => (
                 <Link
                   key={label}
