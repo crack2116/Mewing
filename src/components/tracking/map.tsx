@@ -42,12 +42,13 @@ export default function Map({ vehicles }: MapProps) {
   // By adding a key to the MapContainer, we force React to re-create the component
   // from scratch when the key changes. This is a robust way to avoid the "Map container
   // already initialized" error during development with hot-reloading.
-  const [mapKey, setMapKey] = useState(0);
+  const [mapKey, setMapKey] = useState(Date.now());
 
   useEffect(() => {
     // This effect runs only once on the client after initial mount.
-    // We update the key to ensure we have a stable key for subsequent renders.
-    setMapKey(prevKey => prevKey + 1);
+    // In a development environment with hot-reloading, this will trigger on each reload,
+    // generating a new key and forcing the MapContainer to be unmounted and remounted.
+    setMapKey(Date.now());
   }, []);
 
   return (
