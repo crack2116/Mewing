@@ -5,8 +5,9 @@ import TrackingActions from '@/components/tracking/tracking-actions';
 import ActiveVehicles from '@/components/tracking/active-vehicles';
 import { activeVehicles } from '@/lib/data';
 
-const Map = dynamic(() => import('@/components/tracking/map'), {
+const Map = dynamic(() => import('@/components/tracking/MapWrapper'), {
   ssr: false,
+  revalidate: 'never'
 });
 
 export default function TrackingPage() {
