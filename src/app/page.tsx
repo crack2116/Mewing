@@ -1,6 +1,8 @@
 import Overview from "@/components/dashboard/overview";
 import RecentRequests from "@/components/dashboard/recent-requests";
 import SalesChart from "@/components/dashboard/sales-chart";
+import QuickActions from "@/components/dashboard/quick-actions";
+import SystemStatus from "@/components/dashboard/system-status";
 
 export default function Home() {
   return (
@@ -13,11 +15,13 @@ export default function Home() {
         <Overview />
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
             <SalesChart />
+            <QuickActions />
           </div>
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-6">
             <RecentRequests />
+            <SystemStatus />
           </div>
         </div>
       </div>
