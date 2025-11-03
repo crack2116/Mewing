@@ -8,27 +8,10 @@ import { Pause, Play } from 'lucide-react';
 import type { ActiveVehicle } from '@/lib/types';
 
 const customIcon = new Icon({
-  iconUrl: `data:image/svg+xml;base64,${btoa(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" width="44" height="44">
-      <!-- Círculo blanco con borde azul oscuro -->
-      <circle cx="22" cy="22" r="19" fill="#ffffff" stroke="#1e40af" stroke-width="2.5"/>
-      <!-- Icono de camión azul centrado -->
-      <!-- Cabina -->
-      <rect fill="#2563eb" x="11" y="14" width="8" height="10" rx="1"/>
-      <!-- Carrocería -->
-      <rect fill="#2563eb" x="19" y="16" width="10" height="8" rx="0.5"/>
-      <!-- Ventana -->
-      <rect fill="#dbeafe" x="13" y="16" width="4" height="4" rx="0.5"/>
-      <!-- Ruedas -->
-      <circle fill="#1e40af" cx="15" cy="26" r="2.5"/>
-      <circle fill="#1e40af" cx="27" cy="26" r="2.5"/>
-      <circle fill="#ffffff" cx="15" cy="26" r="1.5"/>
-      <circle fill="#ffffff" cx="27" cy="26" r="1.5"/>
-    </svg>
-  `)}`,
-  iconSize: [44, 44],
-  iconAnchor: [22, 22],
-  popupAnchor: [0, -22],
+  iconUrl: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="#ffffff" stroke="#1e40af" stroke-width="3"/><rect fill="#2563eb" x="11" y="14" width="9" height="10" rx="1"/><rect fill="#2563eb" x="20" y="16" width="11" height="8" rx="0.5"/><rect fill="#dbeafe" x="13" y="16" width="5" height="5" rx="0.5"/><circle fill="#1e40af" cx="16" cy="26" r="3"/><circle fill="#1e40af" cx="28" cy="26" r="3"/><circle fill="#ffffff" cx="16" cy="26" r="1.5"/><circle fill="#ffffff" cx="28" cy="26" r="1.5"/></svg>`)}`,
+  iconSize: [48, 48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -24],
 });
 
 
