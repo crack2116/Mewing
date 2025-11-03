@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { ScrollArea } from '../ui/scroll-area';
+import { Button } from '../ui/button';
 
 const navItems = [
   { href: '/', icon: LayoutGrid, label: 'Panel de Control' },
@@ -31,14 +32,14 @@ export default function Sidebar() {
 
   return (
     <div className="hidden border-r bg-background md:flex md:flex-col">
-      <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+      <div className="flex h-14 shrink-0 items-center border-b px-4 lg:h-[60px] lg:px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold font-headline text-lg">
           <Truck className="h-6 w-6 text-primary" />
           <span className="">Mewing</span>
         </Link>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden">
         <ScrollArea className="flex-1">
           <nav className="grid items-start px-2 py-4 text-sm font-medium lg:px-4">
             {navItems.map(({ href, icon: Icon, label }) => (
@@ -55,6 +56,12 @@ export default function Sidebar() {
             ))}
           </nav>
         </ScrollArea>
+        <div className="mt-auto border-t p-2">
+            <Button variant="ghost" className="w-full justify-start">
+                <LogOut className="mr-2 h-4 w-4" />
+                Cerrar Sesión
+            </Button>
+        </div>
       </div>
     </div>
   );
