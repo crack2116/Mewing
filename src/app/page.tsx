@@ -21,8 +21,8 @@ export default function Home() {
             <RecentRequests />
           </div>
           <div className="lg:col-span-2 space-y-6">
-            <QuickActions />
             <SystemStatus />
+            <QuickActions />
           </div>
         </div>
       </div>
