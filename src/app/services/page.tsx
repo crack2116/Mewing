@@ -107,7 +107,7 @@ export default function ServicesPage() {
                               {date ? format(date, "PPP", { locale: es }) : <span>Elige una fecha</span>}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" side="bottom">
+                          <PopoverContent className="w-auto p-0" align="start" side="bottom">
                             <Calendar
                               mode="single"
                               selected={date}
