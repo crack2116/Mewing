@@ -1,4 +1,4 @@
-import type { ServiceRequest, Client } from './types';
+import type { ServiceRequest, Client, ActiveVehicle } from './types';
 
 export const serviceRequests: ServiceRequest[] = [
   {
@@ -104,4 +104,34 @@ export const clients: Client[] = [
         },
         address: 'Av. Mariscal Castilla 147, San Juan de Lurigancho, Lima',
     }
+  ];
+
+  export const activeVehicles: ActiveVehicle[] = [
+    {
+      id: 'BCD-890',
+      status: 'Disponible',
+      model: 'Mitsubishi Fuso Canter',
+      driverId: 'C0010',
+      otherId: '0',
+      time: '03:13:53 p. m.',
+      position: [-5.185, -80.62],
+    },
+    {
+      id: 'ABC-123',
+      status: 'Disponible',
+      model: 'Volvo FH16',
+      driverId: 'C0001',
+      otherId: '0',
+      time: '03:13:53 p. m.',
+      position: [-5.195, -80.635],
+    },
+    {
+        id: 'XYZ-789',
+        status: 'Disponible',
+        model: 'Volvo FH16',
+        driverId: 'C0002',
+        otherId: '0',
+        time: '03:13:53 p. m.',
+        position: [-5.20, -80.625],
+    },
   ];

@@ -22,3 +22,13 @@ export type Client = {
   };
   address: string;
 };
+
+export type ActiveVehicle = {
+  id: string;
+  status: 'Disponible' | 'En tránsito';
+  model: string;
+  driverId: string;
+  otherId: string;
+  time: string;
+  position: [number, number];
+};
