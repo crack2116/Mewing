@@ -1,3 +1,4 @@
+// This file is not used anymore and will be removed in a future iteration.
 "use client"
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts"
