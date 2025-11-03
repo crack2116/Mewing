@@ -26,7 +26,6 @@ const navItems = [
 
 const secondaryNavItems = [
     { href: '/profile', icon: User, label: 'Mi Perfil' },
-    { href: '/settings', icon: Settings, label: 'Configuración' },
     { href: '/support', icon: LifeBuoy, label: 'Soporte' },
 ]
 
