@@ -1,5 +1,5 @@
 'use client';
-import { Search, Bell, Home, Menu, Moon, Sun, Package2, Truck, User } from "lucide-react";
+import { Search, Bell, Home, Menu, Moon, Sun, Package2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -30,6 +30,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { Truck } from "lucide-react";
 
 export default function Header() {
   const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
@@ -52,7 +53,7 @@ export default function Header() {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href="#">Dashboard</Link>
+                  <Link href="#">Panel</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -77,7 +78,7 @@ export default function Header() {
           <Button variant="ghost" size="icon" className="rounded-full relative">
             <Bell className="h-5 w-5" />
             <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-primary ring-2 ring-background"></span>
-            <span className="sr-only">Notifications</span>
+            <span className="sr-only">Notificaciones</span>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

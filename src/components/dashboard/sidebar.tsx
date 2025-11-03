@@ -25,10 +25,10 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
-  { href: '/services', icon: ClipboardList, label: 'Services' },
-  { href: '/management', icon: Users, label: 'Management' },
-  { href: '/tracking', icon: Map, label: 'Tracking' },
-  { href: '/reports', icon: LineChart, label: 'Reports' },
+  { href: '/services', icon: ClipboardList, label: 'Servicios' },
+  { href: '/management', icon: Users, label: 'Gestión' },
+  { href: '/tracking', icon: Map, label: 'Seguimiento' },
+  { href: '/reports', icon: LineChart, label: 'Reportes' },
 ];
 
 export default function Sidebar() {
