@@ -7,7 +7,6 @@ import { activeVehicles } from '@/lib/data';
 
 const Map = dynamic(() => import('@/components/tracking/MapWrapper'), {
   ssr: false,
-  revalidate: 'never'
 });
 
 export default function TrackingPage() {
