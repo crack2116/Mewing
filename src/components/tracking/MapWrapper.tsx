@@ -8,18 +8,20 @@ import { Pause, Play } from 'lucide-react';
 import type { ActiveVehicle } from '@/lib/types';
 
 // Fix para el ícono por defecto de react-leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+if (typeof window !== 'undefined') {
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  });
+}
 
 const customIcon = new Icon({
-    iconUrl: `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c-4 0-8 3.5-8 9.5a8.5 8.5 0 0 0 5 7.5c.7.3 1.5-.2 1.5-1v-1.5c0-.6.5-1 1-1h5c.6 0 1 .4 1 1v1.5c0 .8.8 1.3 1.5 1a8.5 8.5 0 0 0 5-7.5C20 5.5 16 2 12 2z"/><path fill="hsl(var(--primary-foreground))" d="M18.5 12.5H16v-1.5c0-.83-.67-1.5-1.5-1.5h-5c-.83 0-1.5.67-1.5 1.5V11H5.5c-.83 0-1.5.67-1.5 1.5v2c0 .83.67 1.5 1.5 1.5H7v.5c0 .83.67 1.5 1.5 1.5h1c.83 0 1.5-.67 1.5-1.5V17h3v.5c0 .83.67 1.5 1.5 1.5h1c.83 0 1.5-.67 1.5-1.5V17h1.5c.83 0 1.5-.67 1.5-1.5v-2c0-.83-.67-1.5-1.5-1.5zM9 11.5v-1h6v1H9z" stroke="none"/></svg>')}`,
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -40],
+  iconUrl: `data:image/svg+xml;base64,${btoa('<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 0C15.1634 0 8 7.16344 8 16C8 24.8366 15.1634 32 24 32C32.8366 32 40 24.8366 40 16C40 7.16344 32.8366 0 24 0Z" fill="hsl(var(--primary))"/><path d="M36 19L31 19L31 16L33 16L33 13L29 13L29 21L31 21L31 23L26 23L26 21L21 21L21 23L16 23L16 21L18 21L18 13L14 13L14 16L16 16L16 19L11 19L11 16L12 16L12 11L25 11L25 8L35 8L35 11L36 11L36 19Z" fill="white"/></svg>')}`,
+  iconSize: [48, 48],
+  iconAnchor: [24, 48],
+  popupAnchor: [0, -48],
 });
 
 
@@ -35,25 +37,27 @@ export default function MapWrapper({ vehicles: initialVehicles }: MapProps) {
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    if (mapContainerRef.current && !mapRef.current) {
-      const map = L.map(mapContainerRef.current, {
-        center: [-5.18, -80.63],
-        zoom: 13,
-        scrollWheelZoom: false,
-      });
-      mapRef.current = map;
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(map);
-
-      initialVehicles.forEach((vehicle) => {
-        const marker = L.marker(vehicle.position, { icon: customIcon })
-          .addTo(map)
-          .bindPopup(`<b>${vehicle.id}</b><br />${vehicle.model}`);
-        markerRefs.current.set(vehicle.id, marker);
-      });
+    if (mapRef.current || !mapContainerRef.current) {
+      return;
     }
+      
+    const map = L.map(mapContainerRef.current, {
+      center: [-5.18, -80.63],
+      zoom: 13,
+      scrollWheelZoom: false,
+    });
+    mapRef.current = map;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
+    initialVehicles.forEach((vehicle) => {
+      const marker = L.marker(vehicle.position, { icon: customIcon })
+        .addTo(map)
+        .bindPopup(`<b>${vehicle.id}</b><br />${vehicle.model}`);
+      markerRefs.current.set(vehicle.id, marker);
+    });
 
     const interval = setInterval(() => {
         if (!isPaused) {
