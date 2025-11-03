@@ -3,31 +3,29 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardFooter,
   CardDescription
 } from "@/components/ui/card";
-import { CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Truck, Server, Zap } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 const statusItems = [
   {
     label: "Servicios Activos",
-    value: "12",
-    color: "bg-green-500",
+    value: "12/20",
+    progress: 60,
+    icon: Truck,
   },
   {
     label: "Vehículos Online",
     value: "8/10",
-    color: "bg-blue-500",
+    progress: 80,
+    icon: Server,
   },
   {
-    label: "Pendientes",
-    value: "3",
-    color: "bg-yellow-500",
-  },
-  {
-    label: "Tiempo Promedio",
-    value: "2.5h",
-    color: "bg-green-500",
+    label: "Rendimiento General",
+    value: "Óptimo",
+    progress: 95,
+    icon: Zap,
   },
 ];
 
@@ -37,30 +35,25 @@ export default function SystemStatus() {
     <Card>
       <CardHeader>
         <CardTitle className="font-headline flex items-center gap-2">
-          <CheckCircle2 className="h-6 w-6 text-green-500" />
+          <CheckCircle2 className="h-6 w-6 text-primary" />
           Estado del Sistema
         </CardTitle>
-        <CardDescription>Monitoreo en tiempo real</CardDescription>
+        <CardDescription>Rendimiento en tiempo real</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">
         {statusItems.map((item) => (
-          <div key={item.label} className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className={`h-2.5 w-2.5 rounded-full ${item.color}`} />
-              <p className="font-medium text-foreground">{item.label}</p>
+          <div key={item.label}>
+            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                    <item.icon className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm font-medium text-foreground">{item.label}</p>
+                </div>
+              <p className="text-sm font-semibold text-muted-foreground">{item.value}</p>
             </div>
-            <div className={`text-sm font-semibold text-muted-foreground border border-border rounded-full px-3 py-0.5`}>
-              {item.value}
-            </div>
+            <Progress value={item.progress} aria-label={`${item.label}: ${item.value}`} />
           </div>
         ))}
       </CardContent>
-      <CardFooter>
-        <div className="text-xs text-muted-foreground flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          <span>Última actualización: hace 2 minutos</span>
-        </div>
-      </CardFooter>
     </Card>
   );
 }
