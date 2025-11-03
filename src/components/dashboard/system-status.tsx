@@ -51,20 +51,22 @@ export default function SystemStatus() {
         </CardTitle>
         <CardDescription>Monitoreo en tiempo real</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {statusItems.map((item) => (
-          <div key={item.label} className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className={`h-2 w-2 rounded-full ${item.color}`}></span>
-              <p className="text-sm text-muted-foreground">{item.label}</p>
+      <CardContent>
+        <div className="space-y-4">
+            {statusItems.map((item) => (
+            <div key={item.label} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                <span className={`h-2 w-2 rounded-full ${item.color}`}></span>
+                <p className="text-sm text-muted-foreground">{item.label}</p>
+                </div>
+                <Badge variant="outline" className="rounded-full px-3 py-1 text-xs">
+                {item.value}
+                </Badge>
             </div>
-            <Badge variant="outline" className="rounded-full px-3 py-1 text-xs">
-              {item.value}
-            </Badge>
-          </div>
-        ))}
+            ))}
+        </div>
         <Separator className="my-4" />
-        <div className="space-y-2 mt-4">
+        <div className="space-y-2 mt-8">
             <h3 className="font-semibold font-headline text-sm flex items-center gap-2">
                 <LineChart className="h-4 w-4" />
                 Acciones Rápidas
