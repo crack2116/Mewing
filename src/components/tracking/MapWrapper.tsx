@@ -11,23 +11,15 @@ const customIcon = new Icon({
   iconUrl: `data:image/svg+xml;base64,${btoa(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
       <defs>
-        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
-          <feOffset dx="1" dy="2" result="offsetblur"/>
-          <feComponentTransfer>
-            <feFuncA type="linear" slope="0.5"/>
-          </feComponentTransfer>
-          <feMerge> 
-            <feMergeNode/>
-            <feMergeNode in="SourceGraphic"/> 
-          </feMerge>
+        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.4"/>
         </filter>
       </defs>
       <g filter="url(#shadow)">
-        <circle cx="24" cy="24" r="18" fill="hsl(var(--primary))" stroke="#FFF" stroke-width="2"/>
-        <path d="M33.5 30h-3a1 1 0 0 1-1-1v-2.5a1.5 1.5 0 0 0-1.5-1.5h-9a1.5 1.5 0 0 0-1.5 1.5V29a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-3.88a3 3 0 0 1 .9-2.12l4.8-4.8a1 1 0 0 1 .7-.3h11.2a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1z" fill="#FFF"/>
-        <circle cx="20" cy="32" r="2.5" fill="#FFF"/>
-        <circle cx="31" cy="32" r="2.5" fill="#FFF"/>
+        <path fill="#007bff" d="M24 0C14.059 0 6 8.059 6 18c0 12 18 30 18 30s18-18 18-30C42 8.059 33.941 0 24 0z"/>
+        <path fill="#ffffff" d="M32.5 25h-2c-0.55 0-1-0.45-1-1v-2.5c0-0.825-0.675-1.5-1.5-1.5h-8c-0.825 0-1.5 0.675-1.5 1.5V24c0 0.55-0.45 1-1 1h-2c-0.55 0-1-0.45-1-1v-3.88c0-1.06 0.43-2.04 1.2-2.72l4-4C22.34 12.66 23.15 12.3 24 12.3h7c0.55 0 1 0.45 1 1v9c0 0.55-0.45 1-1 1z"/>
+        <circle fill="#ffffff" cx="21" cy="27" r="2"/>
+        <circle fill="#ffffff" cx="29" cy="27" r="2"/>
       </g>
     </svg>
   `)}`,
@@ -53,8 +45,7 @@ export default function MapWrapper({ vehicles: initialVehicles }: MapProps) {
         return;
     }
     
-    if (!mapContainerRef.current) return;
-    if (mapRef.current) return;
+    if (!mapContainerRef.current || mapRef.current) return;
 
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
@@ -87,7 +78,7 @@ export default function MapWrapper({ vehicles: initialVehicles }: MapProps) {
           mapRef.current = null;
         }
     }
-  }, []);
+  }, [initialVehicles]);
 
   useEffect(() => {
     const interval = setInterval(() => {
