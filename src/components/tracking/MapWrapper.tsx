@@ -8,11 +8,11 @@ import { Pause, Play } from 'lucide-react';
 import type { ActiveVehicle } from '@/lib/types';
 
 const customIcon = new Icon({
-  iconUrl: `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48"><path fill="#3B82F6" d="M12 0C7.589 0 4 3.589 4 8c0 4.411 8 16 8 16s8-11.589 8-16c0-4.411-3.589-8-8-8z"/><path fill="white" d="M17.5 9.5H16V8.25a.75.75 0 0 0-.75-.75h-2.5a.75.75 0 0 0-.75.75V9.5h-1.5V6.25a.75.75 0 0 0-.75-.75H7.5a.75.75 0 0 0-.75.75v6.5a.75.75 0 0 0 .75.75h.5a1.5 1.5 0 0 0 3 0h2a1.5 1.5 0 0 0 3 0h.5a.75.75 0 0 0 .75-.75V9.5zM9 13.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm6 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>')}`,
-  iconSize: [48, 48],
-  iconAnchor: [24, 48],
-  popupAnchor: [0, -48],
-});
+    iconUrl: `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 32 46"><path fill="#022a4d" d="M15.5 45.75c.31.32.73.5 1.16.5.43 0 .85-.18 1.16-.5C18.14 45.42 32 30.01 32 16.5 32 7.39 24.84 0 16 0S0 7.39 0 16.5C0 30.01 13.86 45.42 15.5 45.75z"/><path fill="#1d63ff" d="M16 43c.4 0 .78-.17 1.05-.45C17.34 42.25 30 28.18 30 16A14 14 0 1 0 2 16c0 12.18 12.66 26.25 12.95 26.55c.27.28.65.45 1.05.45z"/><path fill="#fff" d="M22.4 17.3h-2.5v-2c0-1-1-2-2-2h-3.8c-1 0-2 1-2 2v2H9.6c-1 0-1.5.5-1.5 1.5v5c0 1 .5 1.5 1.5 1.5h.7c.3-1.2 1.4-2 2.7-2s2.4.8 2.7 2h3.4c.3-1.2 1.4-2 2.7-2s2.4.8 2.7 2h.7c1 0 1.5-.5 1.5-1.5v-5c0-1-.5-1.5-1.5-1.5zM13 21a1 1 0 1 1-2 0a1 1 0 0 1 2 0zm6 0a1 1 0 1 1-2 0a1 1 0 0 1 2 0z"/></svg>')}`,
+    iconSize: [40, 60],
+    iconAnchor: [20, 60],
+    popupAnchor: [0, -60],
+  });
 
 interface MapProps {
   vehicles: ActiveVehicle[];
