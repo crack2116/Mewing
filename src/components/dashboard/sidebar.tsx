@@ -5,7 +5,6 @@ import {
   ClipboardList,
   Users,
   LineChart,
-  Settings,
   User,
   LifeBuoy,
   Map,
@@ -22,12 +21,9 @@ const navItems = [
   { href: '/management', icon: Users, label: 'Gestión' },
   { href: '/tracking', icon: Map, label: 'Seguimiento en Tiempo Real' },
   { href: '/reports', icon: LineChart, label: 'Reportes' },
+  { href: '/profile', icon: User, label: 'Mi Perfil' },
+  { href: '/support', icon: LifeBuoy, label: 'Soporte' },
 ];
-
-const secondaryNavItems = [
-    { href: '/profile', icon: User, label: 'Mi Perfil' },
-    { href: '/support', icon: LifeBuoy, label: 'Soporte' },
-]
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -61,21 +57,7 @@ export default function Sidebar() {
             </ScrollArea>
         </div>
         <div className="mt-auto border-t">
-             <nav className="grid items-start px-2 py-4 text-sm font-medium lg:px-4">
-                {secondaryNavItems.map(({ href, icon: Icon, label }) => (
-                    <Link
-                        key={label}
-                        href={href}
-                        className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${
-                        pathname === href ? 'bg-muted text-primary' : 'text-muted-foreground'
-                        }`}
-                    >
-                        <Icon className="h-4 w-4" />
-                        {label}
-                    </Link>
-                ))}
-            </nav>
-            <div className="p-4 border-t">
+            <div className="p-4">
                 <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
                         {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User Avatar" data-ai-hint={userAvatar.imageHint} />}
