@@ -12,20 +12,29 @@ const customIcon = new Icon({
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
       <defs>
         <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.4"/>
+          <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.3"/>
         </filter>
       </defs>
       <g filter="url(#shadow)">
-        <path fill="#22c55e" d="M24 0C14.059 0 6 8.059 6 18c0 12 18 30 18 30s18-18 18-30C42 8.059 33.941 0 24 0z"/>
-        <path fill="#ffffff" d="M32.5 25h-2c-0.55 0-1-0.45-1-1v-2.5c0-0.825-0.675-1.5-1.5-1.5h-8c-0.825 0-1.5 0.675-1.5 1.5V24c0 0.55-0.45 1-1 1h-2c-0.55 0-1-0.45-1-1v-3.88c0-1.06 0.43-2.04 1.2-2.72l4-4C22.34 12.66 23.15 12.3 24 12.3h7c0.55 0 1 0.45 1 1v9c0 0.55-0.45 1-1 1z"/>
-        <circle fill="#ffffff" cx="21" cy="27" r="2"/>
-        <circle fill="#ffffff" cx="29" cy="27" r="2"/>
+        <!-- Círculo blanco con borde azul oscuro -->
+        <circle cx="24" cy="24" r="20" fill="#ffffff" stroke="#1e40af" stroke-width="2.5"/>
+        <!-- Cabina del camión -->
+        <rect fill="#2563eb" x="14" y="18" width="10" height="8" rx="1"/>
+        <!-- Carrocería del camión -->
+        <rect fill="#2563eb" x="24" y="20" width="8" height="6" rx="0.5"/>
+        <!-- Ventana del camión -->
+        <rect fill="#ffffff" x="16" y="20" width="6" height="4" rx="0.5"/>
+        <!-- Ruedas del camión -->
+        <circle fill="#1e40af" cx="18" cy="28" r="2.5"/>
+        <circle fill="#1e40af" cx="28" cy="28" r="2.5"/>
+        <circle fill="#ffffff" cx="18" cy="28" r="1.5"/>
+        <circle fill="#ffffff" cx="28" cy="28" r="1.5"/>
       </g>
     </svg>
   `)}`,
   iconSize: [48, 48],
-  iconAnchor: [24, 48],
-  popupAnchor: [0, -48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -24],
 });
 
 
