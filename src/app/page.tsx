@@ -1,6 +1,7 @@
 import Overview from "@/components/dashboard/overview";
 import RecentRequests from "@/components/dashboard/recent-requests";
 import QuickActions from "@/components/dashboard/quick-actions";
+import SystemStatus from "@/components/dashboard/system-status";
 
 export default function Home() {
   return (
@@ -19,8 +20,9 @@ export default function Home() {
           <div className="lg:col-span-3">
             <RecentRequests />
           </div>
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
             <QuickActions />
+            <SystemStatus />
           </div>
         </div>
       </div>
