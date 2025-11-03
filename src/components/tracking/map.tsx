@@ -6,6 +6,7 @@ import L, { Icon } from 'leaflet';
 import { Button } from '@/components/ui/button';
 import { Pause } from 'lucide-react';
 import type { ActiveVehicle } from '@/lib/types';
+import { useState, useEffect } from 'react';
 
 // Soluciona el problema de los iconos por defecto en react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -26,12 +27,20 @@ interface MapProps {
 }
 
 export default function Map({ vehicles }: MapProps) {
-  // El componente se renderiza solo del lado del cliente gracias a next/dynamic.
-  // No se necesita lógica adicional de useEffect/useState para la clave.
-  
+  const [mapKey, setMapKey] = useState(0);
+
+  useEffect(() => {
+    // This effect runs once on the client after initial render.
+    // It forces a re-render of the map component by updating its key.
+    // This is the canonical solution to the "Map container is already initialized"
+    // error when using react-leaflet with Next.js and HMR.
+    setMapKey(prevKey => prevKey + 1);
+  }, []);
+
   return (
     <div className="relative h-[400px] lg:h-full w-full rounded-lg overflow-hidden border">
       <MapContainer
+        key={mapKey}
         center={[-5.18, -80.63]}
         zoom={13}
         scrollWheelZoom={false}
