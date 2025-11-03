@@ -9,12 +9,10 @@ import { overviewData } from "@/lib/data";
 
 export default function Overview() {
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat('de-DE', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value);
+    }).format(value) + ' US$';
   }
 
   const overviewItems = [
@@ -23,32 +21,32 @@ export default function Overview() {
       icon: DollarSign,
       value: formatCurrency(overviewData.totalRevenue),
       description: "+20.1% desde el último mes",
-      iconBg: "bg-green-100",
-      iconColor: "text-green-600",
+      iconBg: "bg-green-100 dark:bg-green-500/20",
+      iconColor: "text-green-600 dark:text-green-400",
     },
     {
       title: "Nuevos Clientes",
       icon: Users,
       value: `+${overviewData.pendingRequests}`,
       description: "+10% desde el último mes",
-      iconBg: "bg-purple-100",
-      iconColor: "text-purple-600",
+      iconBg: "bg-purple-100 dark:bg-purple-500/20",
+      iconColor: "text-purple-600 dark:text-purple-400",
     },
     {
       title: "Servicios Completados",
       icon: CircleCheckBig,
       value: `+${overviewData.completedServices}`,
       description: "+19% desde el último mes",
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
+      iconBg: "bg-blue-100 dark:bg-blue-500/20",
+      iconColor: "text-blue-600 dark:text-blue-400",
     },
     {
       title: "Solicitudes Pendientes",
       icon: Clock,
       value: overviewData.pendingRequests,
       description: "+5 desde ayer",
-      iconBg: "bg-orange-100",
-      iconColor: "text-orange-600",
+      iconBg: "bg-orange-100 dark:bg-orange-500/20",
+      iconColor: "text-orange-600 dark:text-orange-400",
     },
   ];
 
