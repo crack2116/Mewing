@@ -9,32 +9,26 @@ import type { ActiveVehicle } from '@/lib/types';
 
 const customIcon = new Icon({
   iconUrl: `data:image/svg+xml;base64,${btoa(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-      <defs>
-        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.3"/>
-        </filter>
-      </defs>
-      <g filter="url(#shadow)">
-        <!-- Círculo blanco con borde azul oscuro -->
-        <circle cx="24" cy="24" r="20" fill="#ffffff" stroke="#1e40af" stroke-width="2.5"/>
-        <!-- Cabina del camión -->
-        <rect fill="#2563eb" x="14" y="18" width="10" height="8" rx="1"/>
-        <!-- Carrocería del camión -->
-        <rect fill="#2563eb" x="24" y="20" width="8" height="6" rx="0.5"/>
-        <!-- Ventana del camión -->
-        <rect fill="#ffffff" x="16" y="20" width="6" height="4" rx="0.5"/>
-        <!-- Ruedas del camión -->
-        <circle fill="#1e40af" cx="18" cy="28" r="2.5"/>
-        <circle fill="#1e40af" cx="28" cy="28" r="2.5"/>
-        <circle fill="#ffffff" cx="18" cy="28" r="1.5"/>
-        <circle fill="#ffffff" cx="28" cy="28" r="1.5"/>
-      </g>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" width="44" height="44">
+      <!-- Círculo blanco con borde azul oscuro -->
+      <circle cx="22" cy="22" r="19" fill="#ffffff" stroke="#1e40af" stroke-width="2.5"/>
+      <!-- Icono de camión azul centrado -->
+      <!-- Cabina -->
+      <rect fill="#2563eb" x="11" y="14" width="8" height="10" rx="1"/>
+      <!-- Carrocería -->
+      <rect fill="#2563eb" x="19" y="16" width="10" height="8" rx="0.5"/>
+      <!-- Ventana -->
+      <rect fill="#dbeafe" x="13" y="16" width="4" height="4" rx="0.5"/>
+      <!-- Ruedas -->
+      <circle fill="#1e40af" cx="15" cy="26" r="2.5"/>
+      <circle fill="#1e40af" cx="27" cy="26" r="2.5"/>
+      <circle fill="#ffffff" cx="15" cy="26" r="1.5"/>
+      <circle fill="#ffffff" cx="27" cy="26" r="1.5"/>
     </svg>
   `)}`,
-  iconSize: [48, 48],
-  iconAnchor: [24, 24],
-  popupAnchor: [0, -24],
+  iconSize: [44, 44],
+  iconAnchor: [22, 22],
+  popupAnchor: [0, -22],
 });
 
 
