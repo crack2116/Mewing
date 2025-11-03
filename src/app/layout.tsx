@@ -22,21 +22,18 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased bg-secondary/50">
+      <body className="font-body antialiased bg-background">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
-          <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-            <Sidebar />
-            <div className="flex flex-col">
-              <Header />
-              <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-                {children}
-              </main>
-            </div>
+          <div className="flex min-h-screen w-full flex-col">
+            <Header />
+            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+              {children}
+            </main>
           </div>
           <Toaster />
         </ThemeProvider>
