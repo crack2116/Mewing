@@ -1,14 +1,12 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L, { Icon } from 'leaflet';
 import { Button } from '@/components/ui/button';
 import { Pause } from 'lucide-react';
 import type { ActiveVehicle } from '@/lib/types';
-import { useEffect, useState } from 'react';
 
-// Fix for default icon path issue with webpack
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -26,39 +24,20 @@ interface MapProps {
   vehicles: ActiveVehicle[];
 }
 
-function MapUpdater() {
-    const map = useMap();
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            map.invalidateSize();
-        }, 100); 
-
-        return () => clearTimeout(timer);
-    }, [map]);
-    return null;
-}
-
 export default function Map({ vehicles }: MapProps) {
-  const [mapKey, setMapKey] = useState(0);
-
-  useEffect(() => {
-    // This effect runs once on the client after initial render.
-    // Incrementing the key forces a remount of the MapContainer, which is the
-    // canonical way to fix the "Map container is already initialized" error
-    // that occurs with Next.js's hot-reloading in development.
-    setMapKey(prevKey => prevKey + 1);
-  }, []);
+  if (typeof window === 'undefined') {
+    return null; 
+  }
 
   return (
     <div className="relative h-[400px] lg:h-full w-full rounded-lg overflow-hidden border">
       <MapContainer
-        key={mapKey}
         center={[-5.18, -80.63]}
         zoom={13}
         scrollWheelZoom={false}
         className="h-full w-full"
+        style={{ height: '100%', width: '100%' }}
       >
-        <MapUpdater />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
