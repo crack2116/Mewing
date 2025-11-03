@@ -8,7 +8,7 @@ import { Pause, Play } from 'lucide-react';
 import type { ActiveVehicle } from '@/lib/types';
 
 const customIcon = new Icon({
-  iconUrl: `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="48" height="48"><path d="M56.31,33.17l-1.9-9.48a4,4,0,0,0-4-3.19H40V16.33a4,4,0,0,0-4-4H10a4,4,0,0,0-4,4v24a4,4,0,0,0,4,4H36a4,4_0,0,0,4-4V35.5h8.41a4,4,0,0,0,4-3.19L56,26.5" fill="#3b82f6" /><path d="M32,16.33V40.33H10V16.33H32m4-4H10a4,4,0,0,0-4,4v24a4,4,0,0,0,4,4H36a4,4,0,0,0,4-4V16.33a4,4,0,0,0-4-4Z" fill="#3b82f6" /><path d="M40,20.5H50.41a4,4,0,0,1,4,3.19l1.9,9.48-1.9,5.81a4,4,0,0,1-4,3.19H40Z" fill="#3b82f6" /><circle cx="15" cy="40.33" r="5" fill="white"/><circle cx="31" cy="40.33" r="5" fill="white"/></svg>')}`,
+  iconUrl: `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48"><path fill="#3B82F6" d="M12 0C7.589 0 4 3.589 4 8c0 4.411 8 16 8 16s8-11.589 8-16c0-4.411-3.589-8-8-8z"/><path fill="white" d="M17.5 9.5H16V8.25a.75.75 0 0 0-.75-.75h-2.5a.75.75 0 0 0-.75.75V9.5h-1.5V6.25a.75.75 0 0 0-.75-.75H7.5a.75.75 0 0 0-.75.75v6.5a.75.75 0 0 0 .75.75h.5a1.5 1.5 0 0 0 3 0h2a1.5 1.5 0 0 0 3 0h.5a.75.75 0 0 0 .75-.75V9.5zM9 13.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm6 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>')}`,
   iconSize: [48, 48],
   iconAnchor: [24, 48],
   popupAnchor: [0, -48],
