@@ -8,7 +8,7 @@ import { Pause, Play } from 'lucide-react';
 import type { ActiveVehicle } from '@/lib/types';
 
 const customIcon = new Icon({
-  iconUrl: `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="48" height="48"><path d="M56.31,33.17l-1.9-9.48a4,4,0,0,0-4-3.19H40V16.33a4,4,0,0,0-4-4H10a4,4,0,0,0-4,4v24a4,4,0,0,0,4,4H36a4,4_0,0,0,4-4V35.5h8.41a4,4,0,0,0,4-3.19L56,26.5" fill="hsl(var(--primary))" /><path d="M32,16.33V40.33H10V16.33H32m4-4H10a4,4,0,0,0-4,4v24a4,4,0,0,0,4,4H36a4,4,0,0,0,4-4V16.33a4,4,0,0,0-4-4Z" fill="hsl(var(--primary))" /><path d="M40,20.5H50.41a4,4,0,0,1,4,3.19l1.9,9.48-1.9,5.81a4,4,0,0,1-4,3.19H40Z" fill="hsl(var(--primary))" /><circle cx="15" cy="40.33" r="5" fill="white"/><circle cx="31" cy="40.33" r="5" fill="white"/></svg>')}`,
+  iconUrl: `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="48" height="48"><path d="M56.31,33.17l-1.9-9.48a4,4,0,0,0-4-3.19H40V16.33a4,4,0,0,0-4-4H10a4,4,0,0,0-4,4v24a4,4,0,0,0,4,4H36a4,4_0,0,0,4-4V35.5h8.41a4,4,0,0,0,4-3.19L56,26.5" fill="#3b82f6" /><path d="M32,16.33V40.33H10V16.33H32m4-4H10a4,4,0,0,0-4,4v24a4,4,0,0,0,4,4H36a4,4,0,0,0,4-4V16.33a4,4,0,0,0-4-4Z" fill="#3b82f6" /><path d="M40,20.5H50.41a4,4,0,0,1,4,3.19l1.9,9.48-1.9,5.81a4,4,0,0,1-4,3.19H40Z" fill="#3b82f6" /><circle cx="15" cy="40.33" r="5" fill="white"/><circle cx="31" cy="40.33" r="5" fill="white"/></svg>')}`,
   iconSize: [48, 48],
   iconAnchor: [24, 48],
   popupAnchor: [0, -48],
@@ -55,7 +55,7 @@ export default function MapWrapper({ vehicles: initialVehicles }: MapProps) {
             markerRefs.current.set(vehicle.id, marker);
         });
     }
-  }, []);
+  }, [initialVehicles]);
 
   useEffect(() => {
     const interval = setInterval(() => {
