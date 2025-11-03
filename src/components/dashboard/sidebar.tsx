@@ -14,7 +14,6 @@ import { usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 
 const navItems = [
   { href: '/', icon: LayoutGrid, label: 'Panel de Control' },
@@ -32,23 +31,11 @@ export default function Sidebar() {
 
   return (
     <div className="hidden border-r bg-card md:flex md:flex-col">
-      <div className="flex h-auto items-center border-b p-4 lg:px-6">
-        <div className="flex flex-col gap-4 w-full">
-            <Link href="/" className="flex items-center gap-2 font-semibold font-headline">
-              <Truck className="h-6 w-6 text-primary" />
-              <span className="">Mewing</span>
-            </Link>
-            <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
-                  {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User Avatar" data-ai-hint={userAvatar.imageHint} />}
-                  <AvatarFallback>U</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold text-foreground">Usuario</p>
-                  <p className="text-xs text-muted-foreground">e@gmail.com</p>
-                </div>
-            </div>
-        </div>
+      <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+        <Link href="/" className="flex items-center gap-2 font-semibold font-headline">
+          <Truck className="h-6 w-6 text-primary" />
+          <span className="">Mewing</span>
+        </Link>
       </div>
       <div className="flex-1 overflow-auto">
         <ScrollArea className="h-full">
@@ -69,9 +56,16 @@ export default function Sidebar() {
         </ScrollArea>
       </div>
       <div className="mt-auto border-t p-4">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback>N</AvatarFallback>
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10">
+            {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User Avatar" data-ai-hint={userAvatar.imageHint} />}
+            <AvatarFallback>U</AvatarFallback>
           </Avatar>
+          <div>
+            <p className="font-semibold text-foreground">Usuario</p>
+            <p className="text-xs text-muted-foreground">e@gmail.com</p>
+          </div>
+        </div>
       </div>
     </div>
   );
