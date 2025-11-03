@@ -31,7 +31,7 @@ function MapUpdater() {
     useEffect(() => {
         const timer = setTimeout(() => {
             map.invalidateSize();
-        }, 100);
+        }, 100); // A small delay ensures the container has the correct size
 
         return () => clearTimeout(timer);
     }, [map]);
