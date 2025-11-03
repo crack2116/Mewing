@@ -42,9 +42,20 @@ export const serviceRequests: ServiceRequest[] = [
       subtitle: 'Distribuidora Central S.A.C. - Av. Abancay 456, Lima Cercado',
     },
     status: 'Asignado',
-    date: '25/1/2025',
+    date: '21/1/2025',
     driverId: 'C0007',
   },
+  {
+    id: 'KJKg2PT',
+    client: { id: '172833', name: 'cajamarca' },
+    details: {
+        title: 'Transporte de carga',
+        subtitle: 'cajamarca',
+    },
+    status: 'Asignado',
+    date: '16/11/2025',
+    driverId: 'C0008',
+  }
 ];
 
 export const overviewData = {
