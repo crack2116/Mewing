@@ -66,7 +66,7 @@ export default function SystemStatus() {
             ))}
         </div>
         <Separator className="my-4" />
-        <div className="space-y-2 mt-8">
+        <div className="space-y-2 mt-6">
             <h3 className="font-semibold font-headline text-sm flex items-center gap-2">
                 <LineChart className="h-4 w-4" />
                 Acciones Rápidas
