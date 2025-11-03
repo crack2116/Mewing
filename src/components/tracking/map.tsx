@@ -42,6 +42,10 @@ export default function Map({ vehicles }: MapProps) {
   const [mapKey, setMapKey] = useState(0);
 
   useEffect(() => {
+    // This effect runs once on the client after initial render.
+    // Incrementing the key forces a remount of the MapContainer, which is the
+    // canonical way to fix the "Map container is already initialized" error
+    // that occurs with Next.js's hot-reloading in development.
     setMapKey(prevKey => prevKey + 1);
   }, []);
 
