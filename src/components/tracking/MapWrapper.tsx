@@ -1,13 +1,13 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L, { Icon } from 'leaflet';
 import { Button } from '@/components/ui/button';
 import { Pause } from 'lucide-react';
 import type { ActiveVehicle } from '@/lib/types';
 
-// Default icon fix for react-leaflet
+// Fix para el ícono por defecto de react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
