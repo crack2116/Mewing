@@ -1,5 +1,5 @@
 'use client';
-import { Search, Bell, Menu, Moon, Sun } from "lucide-react";
+import { Search, Bell, Menu, Moon, Sun, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -47,7 +47,7 @@ export default function Header() {
   const currentPage = navItems.find(item => item.href === pathname)?.label || 'Página';
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+    <header className="sticky top-0 z-30 flex h-20 items-end gap-4 border-b bg-background px-4 pb-3 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
        <Sheet>
             <SheetTrigger asChild>
               <Button size="icon" variant="outline" className="sm:hidden">
