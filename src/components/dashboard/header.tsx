@@ -1,5 +1,5 @@
 'use client';
-import { Search, Bell, Home, Menu, Moon, Sun, Package2, User } from "lucide-react";
+import { Search, Bell, Menu, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -21,7 +21,6 @@ import Link from "next/link";
 import Sidebar from "./sidebar";
 import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -30,11 +29,22 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Truck } from "lucide-react";
 
 export default function Header() {
   const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
   const { theme, setTheme } = useTheme();
+  const pathname = usePathname();
+
+  const navItems = [
+    { href: '/', label: 'Dashboard' },
+    { href: '/services', label: 'Servicios' },
+    { href: '/management', label: 'Gestión' },
+    { href: '/tracking', label: 'Seguimiento' },
+    { href: '/reports', label: 'Reportes' },
+    { href: '/profile', label: 'Perfil' },
+  ];
+
+  const currentPage = navItems.find(item => item.href === pathname)?.label || 'Página';
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
@@ -53,12 +63,12 @@ export default function Header() {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href="#">Panel</Link>
+                  <Link href="/">Panel</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>Recientes</BreadcrumbPage>
+                <BreadcrumbPage>{currentPage}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
