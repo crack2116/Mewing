@@ -1,29 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import L, { Icon, Map, Marker } from 'leaflet';
+import L, { Icon, Map as LeafletMap, Marker } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Button } from '@/components/ui/button';
 import { Pause, Play } from 'lucide-react';
 import type { ActiveVehicle } from '@/lib/types';
 
-// Fix para el ícono por defecto de react-leaflet
-if (typeof window !== 'undefined') {
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  });
-}
-
 const customIcon = new Icon({
-  iconUrl: `data:image/svg+xml;base64,${btoa('<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 0C15.1634 0 8 7.16344 8 16C8 24.8366 15.1634 32 24 32C32.8366 32 40 24.8366 40 16C40 7.16344 32.8366 0 24 0Z" fill="hsl(var(--primary))"/><path d="M36 19L31 19L31 16L33 16L33 13L29 13L29 21L31 21L31 23L26 23L26 21L21 21L21 23L16 23L16 21L18 21L18 13L14 13L14 16L16 16L16 19L11 19L11 16L12 16L12 11L25 11L25 8L35 8L35 11L36 11L36 19Z" fill="white"/></svg>')}`,
+  iconUrl: `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/><path d="M12 2L12 7" /><path d="M12 13L12 22" /><path d="M17 5L12 10L7 5" /><path d="M17 19L12 14L7 19" /></svg>')}`,
   iconSize: [48, 48],
   iconAnchor: [24, 48],
   popupAnchor: [0, -48],
 });
-
 
 interface MapProps {
   vehicles: ActiveVehicle[];
@@ -31,60 +20,71 @@ interface MapProps {
 
 export default function MapWrapper({ vehicles: initialVehicles }: MapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<Map | null>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
   const markerRefs = useRef<Map<string, Marker>>(new Map());
   const [vehicles, setVehicles] = useState(initialVehicles);
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    if (mapRef.current || !mapContainerRef.current) {
+    // Ensure this runs only on the client
+    if (typeof window === 'undefined' || !mapContainerRef.current) {
       return;
     }
-      
-    const map = L.map(mapContainerRef.current, {
-      center: [-5.18, -80.63],
-      zoom: 13,
-      scrollWheelZoom: false,
-    });
-    mapRef.current = map;
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);
+    // Initialize map only once
+    if (!mapRef.current) {
+        // Fix for default icon issue in Leaflet with webpack
+        delete (L.Icon.Default.prototype as any)._getIconUrl;
+        L.Icon.Default.mergeOptions({
+            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        });
 
-    initialVehicles.forEach((vehicle) => {
-      const marker = L.marker(vehicle.position, { icon: customIcon })
-        .addTo(map)
-        .bindPopup(`<b>${vehicle.id}</b><br />${vehicle.model}`);
-      markerRefs.current.set(vehicle.id, marker);
-    });
+        const map = L.map(mapContainerRef.current, {
+            center: [-5.18, -80.63],
+            zoom: 13,
+            scrollWheelZoom: false,
+        });
+        mapRef.current = map;
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
+
+        initialVehicles.forEach((vehicle) => {
+            const marker = L.marker(vehicle.position, { icon: customIcon })
+            .addTo(map)
+            .bindPopup(`<b>${vehicle.id}</b><br />${vehicle.model}`);
+            markerRefs.current.set(vehicle.id, marker);
+        });
+    }
 
     const interval = setInterval(() => {
-        if (!isPaused) {
-            setVehicles(currentVehicles => 
-                currentVehicles.map(v => ({
-                    ...v,
-                    position: [
-                        v.position[0] + (Math.random() - 0.5) * 0.001,
-                        v.position[1] + (Math.random() - 0.5) * 0.001,
-                    ]
-                }))
-            );
-        }
+      if (!isPaused) {
+        setVehicles((currentVehicles) =>
+          currentVehicles.map((v) => ({
+            ...v,
+            position: [
+              v.position[0] + (Math.random() - 0.5) * 0.001,
+              v.position[1] + (Math.random() - 0.5) * 0.001,
+            ],
+          }))
+        );
+      }
     }, 2000);
 
-
     return () => {
-        clearInterval(interval);
-        if (mapRef.current) {
-            mapRef.current.remove();
-            mapRef.current = null;
-        }
+      clearInterval(interval);
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
   }, [initialVehicles, isPaused]);
 
   useEffect(() => {
-    vehicles.forEach(vehicle => {
+    vehicles.forEach((vehicle) => {
       const marker = markerRefs.current.get(vehicle.id);
       if (marker) {
         marker.setLatLng(vehicle.position);
@@ -92,10 +92,9 @@ export default function MapWrapper({ vehicles: initialVehicles }: MapProps) {
     });
   }, [vehicles]);
 
-
   return (
     <div className="relative h-[400px] lg:h-full w-full rounded-lg overflow-hidden border">
-       <div ref={mapContainerRef} className="h-full w-full" />
+      <div ref={mapContainerRef} className="h-full w-full" />
       <div className="absolute top-4 right-4 z-[1000]">
         <div className="bg-card p-2 rounded-lg shadow-lg flex items-center gap-2">
           <Button size="sm" variant="secondary" onClick={() => setIsPaused(!isPaused)}>
