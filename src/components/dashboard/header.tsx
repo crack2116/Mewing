@@ -1,4 +1,4 @@
-import { Search, Bell, Home } from "lucide-react";
+import { Search, Bell, Home, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -11,17 +11,42 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import Link from "next/link";
+import Sidebar from "./sidebar";
 
 export default function Header() {
   const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
+    <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="shrink-0 md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle navigation menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="flex flex-col p-0">
+            <Sidebar />
+          </SheetContent>
+        </Sheet>
+
         <div className="w-full flex-1">
-          <Breadcrumb>
+          <Breadcrumb className="hidden md:flex">
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/"><Home className="h-4 w-4" /></BreadcrumbLink>
+                <BreadcrumbLink asChild>
+                  <Link href="/"><Home className="h-4 w-4" /></Link>
+                </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
@@ -30,26 +55,28 @@ export default function Header() {
             </BreadcrumbList>
           </Breadcrumb>
         </div>
-        <div className="w-full flex-1">
+
+        <div className="flex items-center gap-4">
           <form>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Buscar..."
-                className="w-full appearance-none bg-card pl-8 shadow-none md:w-2/3 lg:w-1/3"
-              />
-            </div>
-          </form>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Buscar..."
+                  className="w-full appearance-none bg-background pl-8 shadow-none md:w-[200px] lg:w-[320px]"
+                />
+              </div>
+            </form>
+          <Button variant="ghost" size="icon" className="rounded-full relative">
+            <Bell className="h-5 w-5" />
+            <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-primary ring-2 ring-background"></span>
+            <span className="sr-only">Notifications</span>
+          </Button>
+          <Avatar className="h-9 w-9">
+            {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User Avatar" data-ai-hint={userAvatar.imageHint} />}
+            <AvatarFallback>U</AvatarFallback>
+          </Avatar>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">Notifications</span>
-        </Button>
-        <Avatar className="h-9 w-9">
-          {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User Avatar" data-ai-hint={userAvatar.imageHint} />}
-          <AvatarFallback>U</AvatarFallback>
-        </Avatar>
     </header>
   );
 }
