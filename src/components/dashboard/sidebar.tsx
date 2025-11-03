@@ -9,11 +9,14 @@ import {
   LifeBuoy,
   Map,
   LogOut,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ScrollArea } from '../ui/scroll-area';
 import { Button } from '../ui/button';
+import { useTheme } from 'next-themes';
 
 const navItems = [
   { href: '/', icon: LayoutGrid, label: 'Panel de Control' },
@@ -27,9 +30,10 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
 
   return (
-    <div className="hidden border-r bg-background md:flex md:flex-col">
+    <div className="hidden border-r bg-card md:flex md:flex-col">
       <div className="flex h-14 shrink-0 items-center border-b px-4 lg:h-[60px] lg:px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold font-headline text-lg">
           <Truck className="h-6 w-6 text-primary" />
@@ -45,7 +49,7 @@ export default function Sidebar() {
                 key={label}
                 href={href}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
-                  pathname === href ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:text-primary'
+                  pathname === href ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Icon className="h-4 w-4" />
