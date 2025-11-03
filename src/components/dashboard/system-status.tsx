@@ -13,29 +13,21 @@ const statusItems = [
     label: "Servicios Activos",
     value: "12",
     color: "bg-green-500",
-    textColor: "text-green-400",
-    borderColor: "border-green-400/50"
   },
   {
     label: "Vehículos Online",
     value: "8/10",
     color: "bg-blue-500",
-    textColor: "text-blue-400",
-    borderColor: "border-blue-400/50"
   },
   {
     label: "Pendientes",
     value: "3",
     color: "bg-yellow-500",
-    textColor: "text-yellow-400",
-    borderColor: "border-yellow-400/50"
   },
   {
     label: "Tiempo Promedio",
     value: "2.5h",
     color: "bg-green-500",
-    textColor: "text-green-400",
-    borderColor: "border-green-400/50"
   },
 ];
 
@@ -57,7 +49,7 @@ export default function SystemStatus() {
               <span className={`h-2.5 w-2.5 rounded-full ${item.color}`} />
               <p className="font-medium text-foreground">{item.label}</p>
             </div>
-            <div className={`text-sm font-semibold ${item.textColor} border ${item.borderColor} rounded-full px-3 py-0.5`}>
+            <div className={`text-sm font-semibold text-muted-foreground border border-border rounded-full px-3 py-0.5`}>
               {item.value}
             </div>
           </div>

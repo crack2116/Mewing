@@ -47,7 +47,7 @@ export default function RecentRequests() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {serviceRequests.map((request) => (
+            {serviceRequests.slice(0, 3).map((request) => (
               <TableRow key={request.id}>
                 <TableCell>
                   <div className="font-medium">{request.id}</div>

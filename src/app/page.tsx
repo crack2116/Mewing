@@ -1,7 +1,6 @@
 import Overview from "@/components/dashboard/overview";
 import SystemStatus from "@/components/dashboard/system-status";
 import RecentRequests from "@/components/dashboard/recent-requests";
-import QuickActions from "@/components/dashboard/quick-actions";
 
 export default function Home() {
   return (
@@ -19,7 +18,6 @@ export default function Home() {
               </div>
               <div className="xl:col-span-1 flex flex-col gap-8">
                 <SystemStatus />
-                <QuickActions />
               </div>
             </div>
         </div>
