@@ -31,44 +31,42 @@ export default function Sidebar() {
 
   return (
     <div className="hidden border-r bg-card md:block">
-      <div className="flex h-full max-h-screen flex-col">
+      <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <Link href="/" className="flex items-center gap-2 font-semibold font-headline">
             <Truck className="h-6 w-6 text-primary" />
             <span className="">Mewing</span>
           </Link>
         </div>
-        <div className="flex-1 overflow-auto py-2">
-            <ScrollArea className="h-full">
-            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-                {navItems.map(({ href, icon: Icon, label }) => (
+        <div className="flex-1">
+          <ScrollArea className="h-full">
+            <nav className="grid items-start px-2 py-4 text-sm font-medium lg:px-4">
+              {navItems.map(({ href, icon: Icon, label }) => (
                 <Link
-                    key={label}
-                    href={href}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${
+                  key={label}
+                  href={href}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${
                     pathname === href ? 'bg-muted text-primary' : 'text-muted-foreground'
-                    }`}
+                  }`}
                 >
-                    <Icon className="h-4 w-4" />
-                    {label}
+                  <Icon className="h-4 w-4" />
+                  {label}
                 </Link>
-                ))}
+              ))}
             </nav>
-            </ScrollArea>
+          </ScrollArea>
         </div>
-        <div className="mt-auto border-t">
-            <div className="p-4">
-                <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                        {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User Avatar" data-ai-hint={userAvatar.imageHint} />}
-                        <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <p className="font-semibold text-foreground">Usuario</p>
-                        <p className="text-xs text-muted-foreground">e@gmail.com</p>
-                    </div>
-                </div>
+        <div className="mt-auto border-t p-4">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User Avatar" data-ai-hint={userAvatar.imageHint} />}
+              <AvatarFallback>U</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-semibold text-foreground">Usuario</p>
+              <p className="text-xs text-muted-foreground">e@gmail.com</p>
             </div>
+          </div>
         </div>
       </div>
     </div>
