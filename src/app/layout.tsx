@@ -24,18 +24,21 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background">
         <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
         >
-          <div className="flex min-h-screen w-full flex-col">
-            <Header />
-            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-              {children}
-            </main>
-          </div>
-          <Toaster />
+            <div className="flex min-h-screen w-full">
+                <Sidebar />
+                <div className="flex flex-1 flex-col">
+                    <Header />
+                    <main className="flex-1 p-6">
+                        {children}
+                    </main>
+                </div>
+            </div>
+            <Toaster />
         </ThemeProvider>
       </body>
     </html>
