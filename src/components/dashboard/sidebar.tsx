@@ -15,6 +15,7 @@ import { usePathname } from 'next/navigation';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { ScrollArea } from '../ui/scroll-area';
 import { Button } from '../ui/button';
+import { ThemeToggle } from '../theme-toggle';
 
 const navItems = [
   { href: '/', icon: LayoutGrid, label: 'Panel de Control' },
@@ -56,11 +57,12 @@ export default function Sidebar() {
             ))}
           </nav>
         </ScrollArea>
-        <div className="mt-auto border-t p-2">
+        <div className="mt-auto border-t p-2 flex items-center">
             <Button variant="ghost" className="w-full justify-start">
                 <LogOut className="mr-2 h-4 w-4" />
                 Cerrar Sesión
             </Button>
+            <ThemeToggle />
         </div>
       </div>
     </div>
