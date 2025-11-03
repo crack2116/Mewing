@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Pause } from 'lucide-react';
 import type { ActiveVehicle } from '@/lib/types';
 
+// Soluciona el problema de los iconos por defecto en react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -25,10 +26,9 @@ interface MapProps {
 }
 
 export default function Map({ vehicles }: MapProps) {
-  if (typeof window === 'undefined') {
-    return null; 
-  }
-
+  // El componente se renderiza solo del lado del cliente gracias a next/dynamic.
+  // No se necesita lógica adicional de useEffect/useState para la clave.
+  
   return (
     <div className="relative h-[400px] lg:h-full w-full rounded-lg overflow-hidden border">
       <MapContainer
