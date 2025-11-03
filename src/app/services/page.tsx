@@ -1,3 +1,5 @@
+'use client';
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -9,24 +11,43 @@ import {
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { serviceRequests } from "@/lib/data";
 import type { ServiceRequest } from "@/lib/types";
-import { PlusCircle, MoreHorizontal, UserPlus, Pencil, Copy, XCircle } from "lucide-react";
+import { PlusCircle, MoreHorizontal, UserPlus, Pencil, Copy, XCircle, Calendar as CalendarIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+
 
 export default function ServicesPage() {
+  const [date, setDate] = useState<Date>();
 
   const getStatusVariant = (status: ServiceRequest['status']) => {
     switch (status) {
@@ -48,10 +69,72 @@ export default function ServicesPage() {
             <h1 className="text-2xl font-semibold md:text-3xl font-headline">Solicitudes de Servicio</h1>
             <p className="text-muted-foreground">Gestiona y asigna todas las solicitudes de transporte.</p>
         </div>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Crear Nueva Solicitud
-        </Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Crear Nueva Solicitud
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[625px]">
+            <DialogHeader>
+              <DialogTitle className="font-headline text-2xl">Nueva Solicitud de Servicio</DialogTitle>
+              <DialogDescription>
+                Completa los detalles a continuación para crear una nueva solicitud de servicio de transporte.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-6 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="pickup-location">Ubicación de Recogida</Label>
+                        <Input id="pickup-location" placeholder="ej., Calle Principal 123, Piura" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="destination">Destino</Label>
+                        <Input id="destination" placeholder="ej., Av. Mercado 456, Sullana" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                    <Label htmlFor="service-date">Fecha del Servicio</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {date ? format(date, "PPP") : <span>Elige una fecha</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="client">Cliente</Label>
+                        <Input id="client" placeholder="Test Client" />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="special-requirements">Requerimientos Especiales</Label>
+                    <Textarea id="special-requirements" placeholder="ej., Artículos frágiles, requiere refrigeración" />
+                </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="w-full">Enviar Solicitud</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
       <Card className="mt-4">
         <CardContent className="p-0">
