@@ -1,8 +1,8 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useEffect, useRef } from 'react';
+import L, { Icon, Map } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import L, { Icon } from 'leaflet';
 import { Button } from '@/components/ui/button';
 import { Pause } from 'lucide-react';
 import type { ActiveVehicle } from '@/lib/types';
@@ -20,36 +20,49 @@ const customIcon = new Icon({
   iconSize: [38, 38],
 });
 
+
 interface MapProps {
   vehicles: ActiveVehicle[];
 }
 
 export default function MapWrapper({ vehicles }: MapProps) {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<Map | null>(null);
+
+  useEffect(() => {
+    if (mapContainerRef.current && !mapRef.current) {
+      // Initialize the map
+      const map = L.map(mapContainerRef.current, {
+        center: [-5.18, -80.63],
+        zoom: 13,
+        scrollWheelZoom: false,
+      });
+      mapRef.current = map;
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      vehicles.forEach((vehicle) => {
+        L.marker(vehicle.position, { icon: customIcon })
+          .addTo(map)
+          .bindPopup(`<b>${vehicle.id}</b><br />${vehicle.model}`);
+      });
+    }
+
+    // Cleanup function to destroy the map instance
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [vehicles]);
+
+
   return (
     <div className="relative h-[400px] lg:h-full w-full rounded-lg overflow-hidden border">
-      <MapContainer
-        center={[-5.18, -80.63]}
-        zoom={13}
-        scrollWheelZoom={false}
-        className="h-full w-full"
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {vehicles.map((vehicle) => (
-          <Marker
-            key={vehicle.id}
-            position={vehicle.position}
-            icon={customIcon}
-          >
-            <Popup>
-              <b>{vehicle.id}</b><br />
-              {vehicle.model}
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+       <div ref={mapContainerRef} className="h-full w-full" />
       <div className="absolute top-4 right-4 z-[1000]">
         <div className="bg-card p-2 rounded-lg shadow-lg flex items-center gap-2">
           <Button size="sm" variant="secondary">
