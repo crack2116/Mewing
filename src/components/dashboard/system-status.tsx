@@ -7,7 +7,9 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Activity, Clock, Timer } from "lucide-react";
+import { CheckCircle2, Activity, Clock, Timer, ClipboardPlus, Users, Map, LineChart } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
 
 const statusItems = [
   {
@@ -32,6 +34,12 @@ const statusItems = [
   },
 ];
 
+const actions = [
+    { icon: ClipboardPlus, title: "Nueva Solicitud", description: "Crear servicio", href: "/services", label: "Rápido" },
+    { icon: Users, title: "Gestionar Clientes", description: "Ver todos", href: "/management", label: "Gestión" },
+    { icon: Map, title: "Seguimiento", description: "En tiempo real", href: "/tracking", label: "Live" },
+]
+
 
 export default function SystemStatus() {
   return (
@@ -55,6 +63,29 @@ export default function SystemStatus() {
             </Badge>
           </div>
         ))}
+        <Separator className="my-4" />
+        <div className="space-y-2">
+            <h3 className="font-semibold font-headline text-sm flex items-center gap-2">
+                <LineChart className="h-4 w-4" />
+                Acciones Rápidas
+            </h3>
+            {actions.map((action) => (
+                <Link href={action.href} key={action.title}>
+                    <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-muted rounded-lg">
+                                <action.icon className="h-4 w-4 text-primary" />
+                            </div>
+                            <div>
+                                <p className="font-semibold text-sm">{action.title}</p>
+                                <p className="text-xs text-muted-foreground">{action.description}</p>
+                            </div>
+                        </div>
+                        <p className="text-xs font-medium text-muted-foreground">{action.label}</p>
+                    </div>
+                </Link>
+            ))}
+        </div>
       </CardContent>
       <CardFooter className="text-xs text-muted-foreground">
         <Clock className="mr-2 h-4 w-4" />
