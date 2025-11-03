@@ -40,6 +40,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
+import { Textarea } from "@/components/ui/textarea";
+
 
 export default function ServicesPage() {
   const [date, setDate] = useState<Date | undefined>();
@@ -102,7 +104,7 @@ export default function ServicesPage() {
                               )}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {date ? format(date, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
+                              {date ? format(date, "PPP", { locale: es }) : <span>Elige una fecha</span>}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
@@ -120,9 +122,13 @@ export default function ServicesPage() {
                         <Input id="client" placeholder="Test Client" />
                     </div>
                 </div>
+                <div className="space-y-2">
+                    <Label htmlFor="special-requirements">Requerimientos Especiales</Label>
+                    <Textarea id="special-requirements" placeholder="ej., Artículos frágiles, requiere refrigeración" />
+                </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="w-full">Solicitud</Button>
+              <Button type="submit" className="w-full">Enviar Solicitud</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
