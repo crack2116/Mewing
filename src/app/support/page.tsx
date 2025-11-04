@@ -84,11 +84,15 @@ export default function SupportPage() {
       const responseText = await virtualAssistant(assistantInput);
       const modelMessage: Message = { role: 'model', parts: [{ text: responseText }] };
       setMessages((prev) => [...prev, modelMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error calling assistant:', error);
       const errorMessage: Message = {
         role: 'model',
-        parts: [{ text: 'Lo siento, ha ocurrido un error. Por favor, intenta de nuevo más tarde.' }],
+        parts: [{ 
+          text: error?.message?.includes('no está configurado') 
+            ? error.message 
+            : 'Lo siento, ha ocurrido un error. Por favor, intenta de nuevo más tarde o consulta nuestras preguntas frecuentes.' 
+        }],
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {

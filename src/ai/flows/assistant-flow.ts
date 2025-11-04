@@ -9,7 +9,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import type { GenerateRequest } from '@genkit-ai/google-genai';
 
 const HistoryPartSchema = z.object({
   text: z.string(),
@@ -55,29 +54,61 @@ const systemInstruction = {
   `}],
 }
 
-const virtualAssistantFlow = ai.defineFlow(
-  {
-    name: 'virtualAssistantFlow',
-    inputSchema: AssistantInputSchema,
-    outputSchema: AssistantOutputSchema,
-  },
-  async (input) => {
-    const { history, prompt } = input;
+// Función helper para verificar si Genkit está configurado
+const isGenkitConfigured = () => {
+  return !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
+};
 
-    const request: GenerateRequest = {
-      model: 'googleai/gemini-2.5-flash',
-      history: [
-        systemInstruction,
-        ...history,
-      ],
-      prompt: prompt,
-      config: {
-        temperature: 0.7,
+// Función de fallback cuando Genkit no está disponible
+const fallbackResponse = `Lo siento, el asistente virtual no está disponible en este momento porque la API de Google Gemini no está configurada. 
+
+Para habilitar el asistente virtual, por favor configura la variable de entorno GEMINI_API_KEY o GOOGLE_API_KEY en tu archivo .env.local.
+
+Mientras tanto, puedes consultar nuestras preguntas frecuentes (FAQ) o contactarnos directamente en:
+- Email: support@mewing.com
+- Teléfono: +51 987 654 321
+- Horario: Lunes a Viernes, 9 AM a 6 PM`;
+
+// Crear el flow de forma condicional
+let virtualAssistantFlow: (input: AssistantInput) => Promise<string>;
+
+try {
+  if (isGenkitConfigured()) {
+    virtualAssistantFlow = ai.defineFlow(
+      {
+        name: 'virtualAssistantFlow',
+        inputSchema: AssistantInputSchema,
+        outputSchema: AssistantOutputSchema,
       },
+      async (input) => {
+        const { history, prompt } = input;
+
+        const request: any = {
+          model: 'googleai/gemini-2.5-flash',
+          history: [
+            systemInstruction,
+            ...history,
+          ],
+          prompt: prompt,
+          config: {
+            temperature: 0.7,
+          },
+        };
+
+        const response = await ai.generate(request);
+
+        return response.text;
+      }
+    );
+  } else {
+    virtualAssistantFlow = async (input: AssistantInput): Promise<string> => {
+      return fallbackResponse;
     };
-
-    const response = await ai.generate(request);
-
-    return response.text;
   }
-);
+} catch (error: any) {
+  // Si hay error al crear el flow, usar fallback
+  console.warn('Error al crear virtualAssistantFlow:', error?.message || error);
+  virtualAssistantFlow = async (input: AssistantInput): Promise<string> => {
+    return fallbackResponse;
+  };
+}

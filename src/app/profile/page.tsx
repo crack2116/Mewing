@@ -22,10 +22,6 @@ import {
   MapPin,
   Calendar,
   Shield,
-  User,
-  Lock,
-  Settings,
-  Edit,
 } from 'lucide-react';
 import {
   Dialog,
@@ -38,7 +34,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { overviewData, clients, activeVehicles } from '@/lib/data';
 import { useState } from 'react';
 
 export default function ProfilePage() {
@@ -50,112 +45,9 @@ export default function ProfilePage() {
   const [userName, setUserName] = useState('Usuario');
   const [userEmail, setUserEmail] = useState('e@gmail.com');
 
-  const quickActions = [
-    {
-      icon: User,
-      title: 'Editar Perfil',
-      description: 'Actualizar información',
-      action: () => setIsEditing(true),
-      dialog: (
-        <Dialog open={isEditing} onOpenChange={setIsEditing}>
-          <DialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="w-full justify-start">
-              <Edit className="mr-2 h-4 w-4" /> Editar Perfil
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Editar Perfil</DialogTitle>
-              <DialogDescription>
-                Actualiza tu información personal.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Nombre
-                </Label>
-                <Input id="name" value={userName} onChange={(e) => setUserName(e.target.value)} className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">
-                  Email
-                </Label>
-                <Input id="email" type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} className="col-span-3" />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button onClick={() => setIsEditing(false)}>Guardar Cambios</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      ),
-    },
-    {
-      icon: Lock,
-      title: 'Cambiar Contraseña',
-      description: 'Actualizar seguridad',
-      dialog: (
-        <Dialog>
-          <DialogTrigger asChild>
-             <Button variant="ghost" size="sm" className="w-full justify-start">
-                <Lock className="mr-2 h-4 w-4" /> Cambiar Contraseña
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Cambiar Contraseña</DialogTitle>
-              <DialogDescription>
-                Asegura tu cuenta con una nueva contraseña.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label
-                  htmlFor="current-password"
-                  className="text-right"
-                >
-                  Actual
-                </Label>
-                <Input
-                  id="current-password"
-                  type="password"
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label
-                  htmlFor="new-password"
-                  className="text-right"
-                >
-                  Nueva
-                </Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button>Actualizar Contraseña</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      ),
-    },
-    { icon: Settings, title: 'Configuración', description: 'Preferencias' },
-  ];
-
-  const statistics = [
-    { title: 'Servicios Gestionados', value: overviewData.completedServices },
-    { title: 'Clientes Activos', value: clients.length },
-    { title: 'Vehículos Activos', value: activeVehicles.length },
-  ];
-
   return (
-    <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-      <div className="lg:col-span-2">
+    <div className="grid gap-6 md:grid-cols-1">
+      <div>
         <h1 className="text-2xl font-semibold md:text-3xl font-headline">
           Mi Perfil
         </h1>
@@ -251,42 +143,6 @@ export default function ProfilePage() {
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Acciones Rápidas</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {quickActions.map((action) =>
-              action.dialog ? (
-                <div key={action.title}>{action.dialog}</div>
-              ) : (
-                <Button key={action.title} variant="ghost" size="sm" className="w-full justify-start">
-                    <action.icon className="mr-2 h-4 w-4" />
-                    {action.title}
-                </Button>
-              )
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Estadísticas</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {statistics.map((stat) => (
-              <div
-                key={stat.title}
-                className="flex items-center justify-between"
-              >
-                <p className="text-muted-foreground">{stat.title}</p>
-                <p className="font-semibold">{stat.value}</p>
-              </div>
-            ))}
           </CardContent>
         </Card>
       </div>
