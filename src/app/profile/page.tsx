@@ -22,6 +22,11 @@ import {
   MapPin,
   Calendar,
   Shield,
+  Edit,
+  Lock,
+  Settings,
+  Loader2,
+  X,
 } from 'lucide-react';
 import {
   Dialog,
@@ -34,7 +39,21 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getProfileImageUrl } from '@/lib/profile-image';
+import { auth, storage, db } from '@/app/management/firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { onAuthStateChanged, updateProfile, updatePassword, updateEmail, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+
+interface UserProfile {
+  displayName?: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  registrationDate?: string;
+}
 
 export default function ProfilePage() {
   const profileAvatar = PlaceHolderImages.find(
@@ -42,8 +61,373 @@ export default function ProfilePage() {
   );
   
   const [isEditing, setIsEditing] = useState(false);
-  const [userName, setUserName] = useState('Usuario');
-  const [userEmail, setUserEmail] = useState('e@gmail.com');
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [loadingImage, setLoadingImage] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    displayName: 'Usuario',
+    email: 'e@gmail.com',
+    phone: 'No especificado',
+    location: 'Piura, Perú',
+    registrationDate: '10/10/2025',
+  });
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  
+  // Estados para modales
+  const [uploadPhotoOpen, setUploadPhotoOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  
+  // Estados para formularios
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  
+  // Formulario de edición de perfil
+  const [editForm, setEditForm] = useState({
+    displayName: '',
+    email: '',
+    phone: '',
+  });
+  
+  // Formulario de cambio de contraseña
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  
+  // Preferencias
+  const [preferences, setPreferences] = useState({
+    notifications: true,
+    emailNotifications: true,
+    language: 'es',
+  });
+  
+  const { toast } = useToast();
+
+  // Obtener usuario actual y datos del perfil
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUser(user);
+        setUserProfile({
+          displayName: user.displayName || 'Usuario',
+          email: user.email || 'e@gmail.com',
+          phone: user.phoneNumber || 'No especificado',
+          location: 'Piura, Perú',
+          registrationDate: user.metadata.creationTime 
+            ? new Date(user.metadata.creationTime).toLocaleDateString('es-PE')
+            : '10/10/2025',
+        });
+        
+        // Cargar datos adicionales de Firestore si existen
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setUserProfile(prev => ({
+              ...prev,
+              displayName: data.nombresCompletos || data.nombres || user.displayName || 'Usuario',
+              email: data.email || user.email || 'e@gmail.com',
+              phone: data.phone || data.contactPhone || user.phoneNumber || 'No especificado',
+            }));
+          }
+        } catch (error) {
+          console.error('Error loading user profile:', error);
+        }
+        
+        // Cargar imagen de perfil
+        loadProfileImage();
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Cargar imagen de perfil
+  const loadProfileImage = async () => {
+    try {
+      const url = await getProfileImageUrl();
+      if (url) {
+        setProfileImageUrl(url);
+      }
+    } catch (error) {
+      console.error('Error loading profile image:', error);
+    } finally {
+      setLoadingImage(false);
+    }
+  };
+
+  // Manejar selección de archivo
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Por favor selecciona un archivo de imagen",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validar tamaño (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "La imagen debe ser menor a 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setSelectedFile(file);
+      
+      // Crear preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Subir foto de perfil
+  const handleUploadPhoto = async () => {
+    if (!selectedFile || !currentUser) return;
+    
+    setUploading(true);
+    try {
+      // Eliminar foto anterior si existe
+      try {
+        const oldProfileRef = ref(storage, `profiles/${currentUser.uid}.jpg`);
+        await deleteObject(oldProfileRef);
+      } catch (error) {
+        // Ignorar error si no existe la foto anterior
+        console.log('No previous photo to delete');
+      }
+      
+      // Subir nueva foto
+      const profileRef = ref(storage, `profiles/${currentUser.uid}.jpg`);
+      await uploadBytes(profileRef, selectedFile);
+      
+      // Obtener URL de descarga
+      const downloadURL = await getDownloadURL(profileRef);
+      setProfileImageUrl(downloadURL);
+      
+      toast({
+        title: "Foto actualizada",
+        description: "Tu foto de perfil ha sido actualizada exitosamente.",
+      });
+      
+      setUploadPhotoOpen(false);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+    } catch (error: any) {
+      console.error('Error uploading photo:', error);
+      toast({
+        title: "Error",
+        description: `No se pudo subir la foto: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Guardar cambios de perfil
+  const handleSaveProfile = async () => {
+    if (!currentUser) return;
+    
+    setSavingProfile(true);
+    try {
+      // Actualizar displayName en Firebase Auth
+      if (editForm.displayName && editForm.displayName !== currentUser.displayName) {
+        await updateProfile(currentUser, {
+          displayName: editForm.displayName,
+        });
+      }
+      
+      // Actualizar email si cambió
+      if (editForm.email && editForm.email !== currentUser.email) {
+        await updateEmail(currentUser, editForm.email);
+      }
+      
+      // Guardar datos adicionales en Firestore
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      const updateData: any = {};
+      
+      if (editForm.displayName) {
+        updateData.nombresCompletos = editForm.displayName;
+        updateData.nombres = editForm.displayName.split(' ')[0] || editForm.displayName;
+      }
+      
+      if (editForm.email) {
+        updateData.email = editForm.email;
+        updateData.username = editForm.email;
+      }
+      
+      if (editForm.phone) {
+        updateData.phone = editForm.phone;
+        updateData.contactPhone = editForm.phone;
+      }
+      
+      if (Object.keys(updateData).length > 0) {
+        await updateDoc(userDocRef, updateData);
+      }
+      
+      // Actualizar estado local
+      setUserProfile(prev => ({
+        ...prev,
+        displayName: editForm.displayName || prev.displayName,
+        email: editForm.email || prev.email,
+        phone: editForm.phone || prev.phone,
+      }));
+      
+      toast({
+        title: "Perfil actualizado",
+        description: "Tu perfil ha sido actualizado exitosamente.",
+      });
+      
+      setEditProfileOpen(false);
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      let errorMessage = 'No se pudo actualizar el perfil';
+      
+      if (error.code === 'auth/requires-recent-login') {
+        errorMessage = 'Por seguridad, necesitas iniciar sesión nuevamente para cambiar tu email.';
+      } else if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'Este correo electrónico ya está en uso.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Correo electrónico inválido.';
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  // Cambiar contraseña
+  const handleChangePassword = async () => {
+    if (!currentUser) return;
+    
+    // Validaciones
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Por favor completa todos los campos",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Las contraseñas no coinciden",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (passwordForm.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "La nueva contraseña debe tener al menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setChangingPassword(true);
+    try {
+      // Reautenticar usuario
+      const credential = EmailAuthProvider.credential(
+        currentUser.email!,
+        passwordForm.currentPassword
+      );
+      await reauthenticateWithCredential(currentUser, credential);
+      
+      // Actualizar contraseña
+      await updatePassword(currentUser, passwordForm.newPassword);
+      
+      toast({
+        title: "Contraseña actualizada",
+        description: "Tu contraseña ha sido cambiada exitosamente.",
+      });
+      
+      setChangePasswordOpen(false);
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      let errorMessage = 'No se pudo cambiar la contraseña';
+      
+      if (error.code === 'auth/wrong-password') {
+        errorMessage = 'La contraseña actual es incorrecta.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'La nueva contraseña es muy débil.';
+      } else if (error.code === 'auth/requires-recent-login') {
+        errorMessage = 'Por seguridad, necesitas iniciar sesión nuevamente.';
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  // Guardar preferencias
+  const handleSavePreferences = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userDocRef, {
+        preferences: preferences,
+      });
+      
+      toast({
+        title: "Preferencias guardadas",
+        description: "Tus preferencias han sido guardadas exitosamente.",
+      });
+      
+      setPreferencesOpen(false);
+    } catch (error: any) {
+      console.error('Error saving preferences:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron guardar las preferencias",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Abrir modal de edición
+  const handleEditClick = () => {
+    setEditForm({
+      displayName: userProfile.displayName || '',
+      email: userProfile.email || '',
+      phone: userProfile.phone || '',
+    });
+    setEditProfileOpen(true);
+  };
 
   return (
     <div className="grid gap-6 md:grid-cols-1">
@@ -57,25 +441,38 @@ export default function ProfilePage() {
 
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="font-headline">Información Personal</CardTitle>
-            <CardDescription>Datos de tu cuenta de usuario.</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="font-headline">Información Personal</CardTitle>
+                <CardDescription>Datos de tu cuenta de usuario.</CardDescription>
+              </div>
+              <Button variant="outline" onClick={handleEditClick}>
+                <Edit className="mr-2 h-4 w-4" />
+                Editar Perfil
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row items-center gap-6">
               <Avatar className="h-24 w-24">
-                {profileAvatar && (
+                {profileImageUrl ? (
+                  <AvatarImage
+                    src={profileImageUrl}
+                    alt="User Avatar"
+                  />
+                ) : profileAvatar && !loadingImage ? (
                   <AvatarImage
                     src={profileAvatar.imageUrl}
                     alt="User Avatar"
                     data-ai-hint={profileAvatar.imageHint}
                   />
-                )}
-                <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
+                ) : null}
+                <AvatarFallback>{(userProfile.displayName || 'U').charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="flex-1 text-center md:text-left">
-                <h2 className="text-2xl font-bold font-headline">{userName}</h2>
+                <h2 className="text-2xl font-bold font-headline">{userProfile.displayName}</h2>
                 <div className="flex items-center justify-center md:justify-start gap-2 mt-2">
-                  <Dialog>
+                  <Dialog open={uploadPhotoOpen} onOpenChange={setUploadPhotoOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline">
                         <Upload className="mr-2 h-4 w-4" />
@@ -83,13 +480,73 @@ export default function ProfilePage() {
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Subir nueva foto</DialogTitle>
-                        </DialogHeader>
-                        <Input type="file" />
-                        <DialogFooter>
-                            <Button>Subir</Button>
-                        </DialogFooter>
+                      <DialogHeader>
+                        <DialogTitle>Subir nueva foto</DialogTitle>
+                        <DialogDescription>
+                          Selecciona una imagen para tu perfil (máx. 5MB)
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        {previewUrl && (
+                          <div className="relative w-full h-48 rounded-lg overflow-hidden border">
+                            <img
+                              src={previewUrl}
+                              alt="Preview"
+                              className="w-full h-full object-cover"
+                            />
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2"
+                              onClick={() => {
+                                setPreviewUrl(null);
+                                setSelectedFile(null);
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          <Label htmlFor="photo-upload">Seleccionar archivo</Label>
+                          <Input
+                            id="photo-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            disabled={uploading}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setUploadPhotoOpen(false);
+                            setSelectedFile(null);
+                            setPreviewUrl(null);
+                          }}
+                          disabled={uploading}
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          onClick={handleUploadPhoto}
+                          disabled={!selectedFile || uploading}
+                        >
+                          {uploading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Subiendo...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="mr-2 h-4 w-4" />
+                              Subir Foto
+                            </>
+                          )}
+                        </Button>
+                      </DialogFooter>
                     </DialogContent>
                   </Dialog>
                   <Badge variant="secondary">
@@ -103,44 +560,311 @@ export default function ProfilePage() {
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex items-start gap-4">
                 <Mail className="h-6 w-6 text-muted-foreground mt-1" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{userEmail}</p>
+                  <p className="font-medium">{userProfile.email}</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
                 <Phone className="h-6 w-6 text-muted-foreground mt-1" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm text-muted-foreground">Teléfono</p>
-                  <p className="font-medium">No especificado</p>
+                  <p className="font-medium">{userProfile.phone}</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
                 <MapPin className="h-6 w-6 text-muted-foreground mt-1" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm text-muted-foreground">Ubicación</p>
-                  <p className="font-medium">Piura, Perú</p>
+                  <p className="font-medium">{userProfile.location}</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
                 <Calendar className="h-6 w-6 text-muted-foreground mt-1" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm text-muted-foreground">
                     Fecha de Registro
                   </p>
-                  <p className="font-medium">10/10/2025</p>
+                  <p className="font-medium">{userProfile.registrationDate}</p>
                 </div>
               </div>
             </div>
 
             <div className="mt-8 flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
               <Shield className="h-6 w-6 text-muted-foreground flex-shrink-0 mt-1" />
-              <div>
+              <div className="flex-1">
                 <h3 className="font-semibold">Privacidad y Seguridad</h3>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-muted-foreground mt-1 mb-3">
                   Tu cuenta está protegida. Puedes cambiar tu contraseña en
                   cualquier momento.
                 </p>
+                <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Lock className="mr-2 h-4 w-4" />
+                      Cambiar Contraseña
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Cambiar Contraseña</DialogTitle>
+                      <DialogDescription>
+                        Ingresa tu contraseña actual y la nueva contraseña.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="current-password">Contraseña Actual</Label>
+                        <Input
+                          id="current-password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={passwordForm.currentPassword}
+                          onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                          disabled={changingPassword}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password">Nueva Contraseña</Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={passwordForm.newPassword}
+                          onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                          disabled={changingPassword}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Confirmar Nueva Contraseña</Label>
+                        <Input
+                          id="confirm-password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={passwordForm.confirmPassword}
+                          onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                          disabled={changingPassword}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setChangePasswordOpen(false);
+                          setPasswordForm({
+                            currentPassword: '',
+                            newPassword: '',
+                            confirmPassword: '',
+                          });
+                        }}
+                        disabled={changingPassword}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        onClick={handleChangePassword}
+                        disabled={changingPassword}
+                      >
+                        {changingPassword ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Cambiando...
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="mr-2 h-4 w-4" />
+                            Cambiar Contraseña
+                          </>
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Modal de Edición de Perfil */}
+        <Dialog open={editProfileOpen} onOpenChange={setEditProfileOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Perfil</DialogTitle>
+              <DialogDescription>
+                Actualiza tu información personal.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="display-name">Nombre Completo</Label>
+                <Input
+                  id="display-name"
+                  placeholder="Ej. Juan Pérez"
+                  value={editForm.displayName}
+                  onChange={(e) => setEditForm({ ...editForm, displayName: e.target.value })}
+                  disabled={savingProfile}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="ejemplo@email.com"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  disabled={savingProfile}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Teléfono</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="Ej. +51 999 999 999"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  disabled={savingProfile}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditProfileOpen(false);
+                  setEditForm({
+                    displayName: '',
+                    email: '',
+                    phone: '',
+                  });
+                }}
+                disabled={savingProfile}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSaveProfile}
+                disabled={savingProfile}
+              >
+                {savingProfile ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Guardar Cambios
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Card de Configuración */}
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="font-headline">Configuración</CardTitle>
+                <CardDescription>Preferencias de tu cuenta.</CardDescription>
+              </div>
+              <Dialog open={preferencesOpen} onOpenChange={setPreferencesOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configurar
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Preferencias</DialogTitle>
+                    <DialogDescription>
+                      Configura tus preferencias de cuenta.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Notificaciones</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Recibir notificaciones en la aplicación
+                        </p>
+                      </div>
+                      <Button
+                        variant={preferences.notifications ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPreferences({ ...preferences, notifications: !preferences.notifications })}
+                      >
+                        {preferences.notifications ? "Activo" : "Inactivo"}
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Notificaciones por Email</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Recibir notificaciones por correo electrónico
+                        </p>
+                      </div>
+                      <Button
+                        variant={preferences.emailNotifications ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPreferences({ ...preferences, emailNotifications: !preferences.emailNotifications })}
+                      >
+                        {preferences.emailNotifications ? "Activo" : "Inactivo"}
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="language">Idioma</Label>
+                      <select
+                        id="language"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={preferences.language}
+                        onChange={(e) => setPreferences({ ...preferences, language: e.target.value })}
+                      >
+                        <option value="es">Español</option>
+                        <option value="en">English</option>
+                      </select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setPreferencesOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleSavePreferences}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      Guardar Preferencias
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Notificaciones</span>
+                <Badge variant={preferences.notifications ? "default" : "secondary"}>
+                  {preferences.notifications ? "Activo" : "Inactivo"}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Notificaciones por Email</span>
+                <Badge variant={preferences.emailNotifications ? "default" : "secondary"}>
+                  {preferences.emailNotifications ? "Activo" : "Inactivo"}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Idioma</span>
+                <Badge variant="secondary">
+                  {preferences.language === 'es' ? 'Español' : 'English'}
+                </Badge>
               </div>
             </div>
           </CardContent>

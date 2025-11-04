@@ -1,3 +1,4 @@
+'use client';
 import Overview from "@/components/dashboard/overview";
 import RecentRequests from "@/components/dashboard/recent-requests";
 import SystemStatus from "@/components/dashboard/system-status";

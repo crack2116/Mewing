@@ -6,7 +6,7 @@ import TrackingActions from '@/components/tracking/tracking-actions';
 import ActiveVehicles from '@/components/tracking/active-vehicles';
 import { db, auth } from '@/app/management/firebase';
 import { collection, getDocs, onSnapshot } from 'firebase/firestore';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { ActiveVehicle } from '@/lib/types';
@@ -28,12 +28,9 @@ export default function TrackingPage() {
     
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        try {
-          await signInAnonymously(auth);
-        } catch (error) {
-          console.error('Error signing in:', error);
-          setLoading(false);
-        }
+        // Usuario no autenticado - será redirigido por ProtectedLayout
+        setLoading(false);
+        return;
       } else {
         // Helper function to convert Firestore vehicle data to ActiveVehicle
         const convertVehicleData = (doc: any, index: number, totalDocs: number): ActiveVehicle => {

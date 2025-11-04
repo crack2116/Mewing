@@ -1,8 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { db, auth } from './firebase';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
-import { signInAnonymously, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { collection, getDocs, addDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import {
   Building2,
   User,
@@ -30,7 +31,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Search as SearchIcon, Calendar as CalendarIcon, Check } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertCircle, Search as SearchIcon, Calendar as CalendarIcon, Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -43,6 +45,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -105,6 +108,7 @@ interface User {
 
 
 export default function ManagementPage() {
+  const searchParams = useSearchParams();
   const [clients, setClients] = useState<Client[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -114,6 +118,21 @@ export default function ManagementPage() {
   const [error, setError] = useState<string | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  
+  // Estado para el tab activo (default desde query params o 'clients')
+  const [activeTab, setActiveTab] = useState<string>('clients');
+  
+  // Sincronizar tab activo con query params
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['clients', 'drivers', 'vehicles', 'users'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+  
+  // Estados para paginación de clientes
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   
   // User form state
   const [userDialogOpen, setUserDialogOpen] = useState(false);
@@ -167,6 +186,16 @@ export default function ManagementPage() {
   const [savingClient, setSavingClient] = useState(false);
   const [searchingRuc, setSearchingRuc] = useState(false);
   const { toast } = useToast();
+
+  // Estados para edición y eliminación
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
+  const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
+  const [deletingDriverId, setDeletingDriverId] = useState<string | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [deletingVehicleId, setDeletingVehicleId] = useState<string | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   // Function to search RUC in SUNAT API
   const searchRucInSunat = async (ruc: string) => {
@@ -558,14 +587,566 @@ export default function ManagementPage() {
       setAuthLoading(false);
       
       if (!user) {
-        // Try to sign in anonymously
-        try {
-          console.log("No user authenticated, attempting anonymous sign in...");
-          await signInAnonymously(auth);
-        } catch (authError: any) {
-          console.error("Error signing in anonymously:", authError);
-          setError("Error de autenticación: No se pudo autenticar. Por favor, inicia sesión.");
-        }
+        // Usuario no autenticado - será redirigido por ProtectedLayout
+        setError("Por favor, inicia sesión para acceder a esta página.");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Funciones para editar y eliminar CLIENTES
+  const handleEditClient = (client: Client) => {
+    setEditingClient(client);
+    setClientForm({
+      ruc: client.ruc || '',
+      name: client.name || '',
+      contactName: client.contactName || '',
+      contactEmail: client.contactEmail || '',
+      address: client.address || '',
+    });
+    setClientDialogOpen(true);
+  };
+
+  const handleDeleteClient = async () => {
+    console.log('handleDeleteClient called, deletingClientId:', deletingClientId);
+    console.log('db:', db);
+    console.log('firebaseUser:', firebaseUser);
+    
+    if (!deletingClientId || !db) {
+      console.error('Missing deletingClientId or db');
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el cliente. ID no válido.",
+        variant: "destructive",
+      });
+      setDeletingClientId(null);
+      return;
+    }
+    
+    if (!firebaseUser) {
+      console.error('User not authenticated');
+      toast({
+        title: "Error",
+        description: "Debes estar autenticado para eliminar clientes.",
+        variant: "destructive",
+      });
+      setDeletingClientId(null);
+      return;
+    }
+    
+    try {
+      console.log('Attempting to delete client:', deletingClientId);
+      const clientRef = doc(db, 'clients', deletingClientId);
+      console.log('Client reference:', clientRef);
+      
+      await deleteDoc(clientRef);
+      
+      console.log('Client deleted successfully');
+      toast({
+        title: "Cliente eliminado",
+        description: "El cliente ha sido eliminado exitosamente.",
+      });
+      
+      // Refresh clients list
+      const clientsSnapshot = await getDocs(collection(db, 'clients'));
+      const clientsData = clientsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Client));
+      setClients(clientsData);
+      
+      setDeletingClientId(null);
+    } catch (error: any) {
+      console.error('Error deleting client:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      console.error('Full error:', JSON.stringify(error, null, 2));
+      
+      let errorMessage = 'No se pudo eliminar el cliente.';
+      
+      if (error.code === 'permission-denied') {
+        errorMessage = 'No tienes permisos para eliminar clientes. Verifica las reglas de Firestore y asegúrate de estar autenticado.';
+      } else if (error.code === 'not-found') {
+        errorMessage = 'El cliente no existe o ya fue eliminado.';
+      } else if (error.message) {
+        errorMessage = `No se pudo eliminar el cliente: ${error.message}`;
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      setDeletingClientId(null);
+    }
+  };
+
+  const handleUpdateClient = async () => {
+    if (!editingClient || !db) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el cliente. Datos inválidos.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!firebaseUser) {
+      toast({
+        title: "Error",
+        description: "Debes estar autenticado para actualizar clientes.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSavingClient(true);
+    try {
+      console.log('Updating client:', editingClient.id);
+      console.log('Client data:', clientForm);
+      
+      const clientRef = doc(db, 'clients', editingClient.id);
+      console.log('Client reference:', clientRef);
+      
+      const updateData = {
+        ruc: clientForm.ruc.trim(),
+        name: clientForm.name.trim(),
+        contactName: clientForm.contactName.trim() || undefined,
+        contactEmail: clientForm.contactEmail.trim() || undefined,
+        address: clientForm.address.trim() || undefined,
+      };
+      
+      console.log('Update data:', updateData);
+      
+      await updateDoc(clientRef, updateData);
+      
+      console.log('Client updated successfully');
+      
+      toast({
+        title: "Cliente actualizado",
+        description: `El cliente ${clientForm.name} ha sido actualizado exitosamente.`,
+      });
+      
+      // Refresh clients list
+      const clientsSnapshot = await getDocs(collection(db, 'clients'));
+      const clientsData = clientsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Client));
+      setClients(clientsData);
+      
+      setEditingClient(null);
+      setClientForm({
+        ruc: '',
+        name: '',
+        contactName: '',
+        contactEmail: '',
+        address: '',
+      });
+      setClientDialogOpen(false);
+    } catch (error: any) {
+      console.error('Error updating client:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      
+      let errorMessage = 'No se pudo actualizar el cliente.';
+      
+      if (error.code === 'permission-denied') {
+        errorMessage = 'No tienes permisos para actualizar clientes. Verifica las reglas de Firestore.';
+      } else if (error.code === 'not-found') {
+        errorMessage = 'El cliente no existe o ya fue eliminado.';
+      } else if (error.message) {
+        errorMessage = `No se pudo actualizar el cliente: ${error.message}`;
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingClient(false);
+    }
+  };
+
+  // Funciones para editar y eliminar CONDUCTORES
+  const handleEditDriver = (driver: Driver) => {
+    setEditingDriver(driver);
+    const nombres = driver.firstName || driver.name || '';
+    const apellidos = driver.lastName || '';
+    setDriverForm({
+      dni: driver.dni || '',
+      nombres: nombres,
+      apellidos: apellidos,
+      licenseNumber: driver.licenseNumber || driver.license || '',
+      contactPhone: driver.contactPhone || driver.phone || '',
+    });
+    setDriverDialogOpen(true);
+  };
+
+  const handleDeleteDriver = async () => {
+    if (!deletingDriverId || !db) return;
+    
+    try {
+      await deleteDoc(doc(db, 'drivers', deletingDriverId));
+      toast({
+        title: "Conductor eliminado",
+        description: "El conductor ha sido eliminado exitosamente.",
+      });
+      setDeletingDriverId(null);
+      // Refresh drivers list
+      const driversSnapshot = await getDocs(collection(db, 'drivers'));
+      const driversData = driversSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Driver));
+      setDrivers(driversData);
+    } catch (error: any) {
+      console.error('Error deleting driver:', error);
+      toast({
+        title: "Error",
+        description: `No se pudo eliminar el conductor: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateDriver = async () => {
+    if (!editingDriver || !db) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el conductor. Datos inválidos.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!firebaseUser) {
+      toast({
+        title: "Error",
+        description: "Debes estar autenticado para actualizar conductores.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSavingDriver(true);
+    try {
+      console.log('Updating driver:', editingDriver.id);
+      console.log('Driver data:', driverForm);
+      
+      const apellidosParts = driverForm.apellidos.trim().split(' ');
+      const apellidoPaterno = apellidosParts[0] || '';
+      const apellidoMaterno = apellidosParts.slice(1).join(' ') || '';
+      
+      const driverRef = doc(db, 'drivers', editingDriver.id);
+      console.log('Driver reference:', driverRef);
+      
+      const updateData = {
+        dni: driverForm.dni.trim(),
+        firstName: driverForm.nombres.trim(),
+        lastName: driverForm.apellidos.trim(),
+        apellidoPaterno: apellidoPaterno,
+        apellidoMaterno: apellidoMaterno,
+        licenseNumber: driverForm.licenseNumber.trim(),
+        contactPhone: driverForm.contactPhone.trim(),
+      };
+      
+      console.log('Update data:', updateData);
+      
+      await updateDoc(driverRef, updateData);
+      
+      console.log('Driver updated successfully');
+      
+      toast({
+        title: "Conductor actualizado",
+        description: `El conductor ${driverForm.nombres} ${driverForm.apellidos} ha sido actualizado exitosamente.`,
+      });
+      
+      // Refresh drivers list
+      const driversSnapshot = await getDocs(collection(db, 'drivers'));
+      const driversData = driversSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Driver));
+      setDrivers(driversData);
+      
+      setEditingDriver(null);
+      setDriverForm({
+        dni: '',
+        nombres: '',
+        apellidos: '',
+        licenseNumber: '',
+        contactPhone: '',
+      });
+      setDriverDialogOpen(false);
+    } catch (error: any) {
+      console.error('Error updating driver:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      
+      let errorMessage = 'No se pudo actualizar el conductor.';
+      
+      if (error.code === 'permission-denied') {
+        errorMessage = 'No tienes permisos para actualizar conductores. Verifica las reglas de Firestore.';
+      } else if (error.code === 'not-found') {
+        errorMessage = 'El conductor no existe o ya fue eliminado.';
+      } else if (error.message) {
+        errorMessage = `No se pudo actualizar el conductor: ${error.message}`;
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingDriver(false);
+    }
+  };
+
+  // Funciones para editar y eliminar VEHÍCULOS
+  const handleEditVehicle = (vehicle: Vehicle) => {
+    setEditingVehicle(vehicle);
+    setVehicleForm({
+      licensePlate: vehicle.licensePlate || vehicle.plate || '',
+      make: vehicle.make || '',
+      model: vehicle.model || '',
+      type: vehicle.type || vehicle.tipo || '',
+      driverId: vehicle.driverId || '',
+    });
+    setVehicleDialogOpen(true);
+  };
+
+  const handleDeleteVehicle = async () => {
+    if (!deletingVehicleId || !db) return;
+    
+    try {
+      await deleteDoc(doc(db, 'vehicles', deletingVehicleId));
+      toast({
+        title: "Vehículo eliminado",
+        description: "El vehículo ha sido eliminado exitosamente.",
+      });
+      setDeletingVehicleId(null);
+      // Refresh vehicles list
+      const vehiclesSnapshot = await getDocs(collection(db, 'vehicles'));
+      const vehiclesData = vehiclesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Vehicle));
+      setVehicles(vehiclesData);
+    } catch (error: any) {
+      console.error('Error deleting vehicle:', error);
+      toast({
+        title: "Error",
+        description: `No se pudo eliminar el vehículo: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateVehicle = async () => {
+    if (!editingVehicle || !db) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el vehículo. Datos inválidos.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!firebaseUser) {
+      toast({
+        title: "Error",
+        description: "Debes estar autenticado para actualizar vehículos.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSavingVehicle(true);
+    try {
+      console.log('Updating vehicle:', editingVehicle.id);
+      console.log('Vehicle data:', vehicleForm);
+      
+      const vehicleRef = doc(db, 'vehicles', editingVehicle.id);
+      console.log('Vehicle reference:', vehicleRef);
+      
+      // Preparar datos de actualización
+      // Firestore no permite undefined, así que usamos null o eliminamos campos vacíos
+      const updateData: any = {
+        licensePlate: vehicleForm.licensePlate.trim(),
+        plate: vehicleForm.licensePlate.trim(),
+        make: vehicleForm.make.trim(),
+        model: vehicleForm.model.trim(),
+      };
+      
+      // Solo agregar type/tipo si tiene valor
+      const vehicleType = vehicleForm.type.trim();
+      if (vehicleType) {
+        updateData.type = vehicleType;
+        updateData.tipo = vehicleType;
+      } else {
+        // Si está vacío, establecer null (Firestore permite null pero no undefined)
+        updateData.type = null;
+        updateData.tipo = null;
+      }
+      
+      // Solo agregar driverId si tiene valor
+      const driverIdValue = vehicleForm.driverId.trim();
+      if (driverIdValue) {
+        updateData.driverId = driverIdValue;
+      } else {
+        updateData.driverId = null;
+      }
+      
+      console.log('Update data:', updateData);
+      
+      await updateDoc(vehicleRef, updateData);
+      
+      console.log('Vehicle updated successfully');
+      
+      toast({
+        title: "Vehículo actualizado",
+        description: `El vehículo ${vehicleForm.licensePlate} ha sido actualizado exitosamente.`,
+      });
+      
+      // Refresh vehicles list
+      const vehiclesSnapshot = await getDocs(collection(db, 'vehicles'));
+      const vehiclesData = vehiclesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Vehicle));
+      setVehicles(vehiclesData);
+      
+      setEditingVehicle(null);
+      setVehicleForm({
+        licensePlate: '',
+        make: '',
+        model: '',
+        type: '',
+        driverId: '',
+      });
+      setVehicleDialogOpen(false);
+    } catch (error: any) {
+      console.error('Error updating vehicle:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      
+      let errorMessage = 'No se pudo actualizar el vehículo.';
+      
+      if (error.code === 'permission-denied') {
+        errorMessage = 'No tienes permisos para actualizar vehículos. Verifica las reglas de Firestore.';
+      } else if (error.code === 'not-found') {
+        errorMessage = 'El vehículo no existe o ya fue eliminado.';
+      } else if (error.message) {
+        errorMessage = `No se pudo actualizar el vehículo: ${error.message}`;
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingVehicle(false);
+    }
+  };
+
+  // Funciones para editar y eliminar USUARIOS
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    const nombres = user.nombres || user.nombresCompletos?.split(' ')[0] || '';
+    const apellidos = user.apellidoPaterno && user.apellidoMaterno 
+      ? `${user.apellidoPaterno} ${user.apellidoMaterno}`
+      : user.nombresCompletos?.split(' ').slice(1).join(' ') || '';
+    
+    let fechaNacimiento: Date | undefined = undefined;
+    if (user.fechaNacimiento) {
+      fechaNacimiento = new Date(user.fechaNacimiento);
+    }
+    
+    setUserForm({
+      dni: user.dni || '',
+      nombres: nombres,
+      apellidoPaterno: user.apellidoPaterno || '',
+      apellidoMaterno: user.apellidoMaterno || '',
+      fechaNacimiento: fechaNacimiento,
+      direccion: user.direccion || '',
+      email: user.email || '',
+      password: '',
+      role: user.role || 'assistant',
+    });
+    setUserDialogOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deletingUserId || !db) return;
+    
+    try {
+      await deleteDoc(doc(db, 'users', deletingUserId));
+      toast({
+        title: "Usuario eliminado",
+        description: "El usuario ha sido eliminado exitosamente.",
+      });
+      setDeletingUserId(null);
+      // Refresh users list
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const usersData = usersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as User));
+      setUsers(usersData);
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: `No se pudo eliminar el usuario: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateUser = async () => {
+    if (!editingUser || !db) return;
+    
+    setSavingUser(true);
+    try {
+      await updateDoc(doc(db, 'users', editingUser.id), {
+        dni: userForm.dni,
+        nombres: userForm.nombres.trim(),
+        apellidoPaterno: userForm.apellidoPaterno.trim(),
+        apellidoMaterno: userForm.apellidoMaterno.trim(),
+        fechaNacimiento: userForm.fechaNacimiento ? userForm.fechaNacimiento.toISOString() : undefined,
+        direccion: userForm.direccion.trim() || undefined,
+        email: userForm.email.trim(),
+        role: userForm.role,
+      });
+      
+      toast({
+        title: "Usuario actualizado",
+        description: `El usuario ${userForm.nombres} ${userForm.apellidoPaterno} ha sido actualizado exitosamente.`,
+      });
+      
+      setEditingUser(null);
+      setUserForm({
+        dni: '',
+        nombres: '',
+        apellidoPaterno: '',
+        apellidoMaterno: '',
+        fechaNacimiento: undefined,
+        direccion: '',
+        email: '',
+        password: '',
+        role: 'assistant',
+      });
+      setUserDialogOpen(false);
+      
+      // Refresh users list
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const usersData = usersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as User));
+      setUsers(usersData);
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "Error",
+        description: `No se pudo actualizar el usuario: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingUser(false);
+    }
+  };
+
+  // Monitor authentication state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setFirebaseUser(user);
+      setAuthLoading(false);
+      
+      if (!user) {
+        // Usuario no autenticado - será redirigido por ProtectedLayout
+        setError("Por favor, inicia sesión para acceder a esta página.");
       }
     });
 
@@ -711,6 +1292,65 @@ service cloud.firestore {
     );
   });
 
+  // Cálculo de paginación
+  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedClients = filteredClients.slice(startIndex, endIndex);
+  
+  // Resetear a página 1 cuando cambia el término de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+  
+  // Resetear a página 1 cuando cambia itemsPerPage
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [itemsPerPage, totalPages]);
+  
+  // Generar números de página a mostrar
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+    
+    if (totalPages <= maxVisible) {
+      // Mostrar todas las páginas si son pocas
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Mostrar páginas con elipsis
+      if (currentPage <= 3) {
+        // Al inicio
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push('ellipsis');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        // Al final
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        // En el medio
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push('ellipsis');
+        pages.push(totalPages);
+      }
+    }
+    
+    return pages;
+  };
+
   const renderLoading = () => (
     <div className="flex items-center justify-center p-10">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -784,7 +1424,7 @@ service cloud.firestore {
         </Alert>
       ) : null}
 
-      <Tabs defaultValue="clients" className="mt-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
         <TabsList>
           <TabsTrigger value="clients">
             <Building2 className="mr-2 h-4 w-4" />
@@ -812,7 +1452,19 @@ service cloud.firestore {
                 Lista de todos los clientes registrados.
               </p>
             </div>
-            <Dialog open={clientDialogOpen} onOpenChange={setClientDialogOpen}>
+            <Dialog open={clientDialogOpen} onOpenChange={(open) => {
+              setClientDialogOpen(open);
+              if (!open) {
+                setEditingClient(null);
+                setClientForm({
+                  ruc: '',
+                  name: '',
+                  contactName: '',
+                  contactEmail: '',
+                  address: '',
+                });
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button>
                   <PlusCircle className="mr-2 h-4 w-4" />
@@ -821,9 +1473,9 @@ service cloud.firestore {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle className="font-headline text-2xl">Agregar Nuevo Cliente</DialogTitle>
+                  <DialogTitle className="font-headline text-2xl">{editingClient ? 'Editar Cliente' : 'Agregar Nuevo Cliente'}</DialogTitle>
                   <DialogDescription>
-                    Completa los detalles para registrar un nuevo cliente.
+                    {editingClient ? 'Modifica los detalles del cliente.' : 'Completa los detalles para registrar un nuevo cliente.'}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -1009,6 +1661,30 @@ service cloud.firestore {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            
+            {/* AlertDialog para confirmar eliminación de cliente */}
+            <AlertDialog open={deletingClientId !== null} onOpenChange={(open) => !open && setDeletingClientId(null)}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción no se puede deshacer. Esto eliminará permanentemente el cliente seleccionado.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDeleteClient();
+                    }} 
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Eliminar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
           <div className="relative mt-4">
             <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -1020,16 +1696,16 @@ service cloud.firestore {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="mt-4 rounded-lg border bg-card text-card-foreground shadow-sm">
+          <div className="mt-4 rounded-lg border bg-card text-card-foreground shadow-sm overflow-x-auto">
             {loading ? renderLoading() : (
-              <Table>
+              <Table className="min-w-[640px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>RUC</TableHead>
-                    <TableHead>Contacto</TableHead>
-                    <TableHead>Dirección</TableHead>
-                    <TableHead>
+                    <TableHead className="font-semibold">Nombre</TableHead>
+                    <TableHead className="font-semibold">RUC</TableHead>
+                    <TableHead className="font-semibold">Contacto</TableHead>
+                    <TableHead className="font-semibold">Dirección</TableHead>
+                    <TableHead className="w-[50px]">
                       <span className="sr-only">Acciones</span>
                     </TableHead>
                   </TableRow>
@@ -1060,40 +1736,149 @@ service cloud.firestore {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredClients.map((client, index) => (
-                      <TableRow key={`client-${client.id}-${index}`}>
-                      <TableCell className="font-medium">{client.name}</TableCell>
-                      <TableCell>{client.ruc}</TableCell>
-                      <TableCell>
-                        <div className="font-medium">{client.contactName}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {client.contactEmail}
-                        </div>
-                      </TableCell>
-                      <TableCell>{client.address}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              aria-haspopup="true"
-                              size="icon"
-                              variant="ghost"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
-                            <DropdownMenuItem>Eliminar</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                    paginatedClients.map((client, index) => (
+                      <TableRow key={`client-${client.id}-${index}`} className="hover:bg-muted/50">
+                        <TableCell className="font-medium py-4">{client.name || 'N/A'}</TableCell>
+                        <TableCell className="py-4">{client.ruc || 'N/A'}</TableCell>
+                        <TableCell className="py-4">
+                          <div className="space-y-1">
+                            <div className="font-medium text-foreground">{client.contactName || 'N/A'}</div>
+                            {client.contactEmail && (
+                              <div className="text-sm text-muted-foreground">
+                                {client.contactEmail}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="max-w-md">
+                            {client.address || 'N/A'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                aria-haspopup="true"
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEditClient(client)}>Editar</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setDeletingClientId(client.id)} className="text-destructive">Eliminar</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
                 </TableBody>
               </Table>
+            )}
+            
+            {/* Controles de paginación */}
+            {!loading && filteredClients.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t px-4 py-3 bg-card">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">
+                    Mostrando {startIndex + 1} - {Math.min(endIndex, filteredClients.length)} de {filteredClients.length}
+                  </span>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => {
+                      setItemsPerPage(Number(value));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="h-8 w-[70px] bg-muted border-muted hover:bg-muted">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-md"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-md"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  {getPageNumbers().map((page, index) => {
+                    if (page === 'ellipsis') {
+                      return (
+                        <Button
+                          key={`ellipsis-${index}`}
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-md cursor-default"
+                          disabled
+                        >
+                          <span className="text-muted-foreground">...</span>
+                        </Button>
+                      );
+                    }
+                    
+                    const pageNum = page as number;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="icon"
+                        className={cn(
+                          "h-8 w-8 rounded-md font-medium",
+                          currentPage === pageNum && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                        )}
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                  
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-md"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-md"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </TabsContent>
@@ -1101,7 +1886,19 @@ service cloud.firestore {
         <TabsContent value="drivers" className="mt-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold font-headline">Conductores</h2>
-            <Dialog open={driverDialogOpen} onOpenChange={setDriverDialogOpen}>
+            <Dialog open={driverDialogOpen} onOpenChange={(open) => {
+              setDriverDialogOpen(open);
+              if (!open) {
+                setEditingDriver(null);
+                setDriverForm({
+                  dni: '',
+                  nombres: '',
+                  apellidos: '',
+                  licenseNumber: '',
+                  contactPhone: '',
+                });
+              }
+            }}>
               <DialogTrigger asChild>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -1110,9 +1907,9 @@ service cloud.firestore {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle className="font-headline text-2xl">Agregar Nuevo Conductor</DialogTitle>
+                  <DialogTitle className="font-headline text-2xl">{editingDriver ? 'Editar Conductor' : 'Agregar Nuevo Conductor'}</DialogTitle>
                   <DialogDescription>
-                    Completa los detalles para registrar un nuevo conductor.
+                    {editingDriver ? 'Modifica los detalles del conductor.' : 'Completa los detalles para registrar un nuevo conductor.'}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -1324,10 +2121,28 @@ service cloud.firestore {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            
+            {/* AlertDialog para confirmar eliminación de conductor */}
+            <AlertDialog open={deletingDriverId !== null} onOpenChange={(open) => !open && setDeletingDriverId(null)}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción no se puede deshacer. Esto eliminará permanentemente el conductor seleccionado.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteDriver} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Eliminar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
-           <div className="mt-4 rounded-lg border bg-card text-card-foreground shadow-sm">
+           <div className="mt-4 rounded-lg border bg-card text-card-foreground shadow-sm overflow-x-auto">
             {loading ? renderLoading() : (
-              <Table>
+              <Table className="min-w-[500px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nombre</TableHead>
@@ -1363,8 +2178,8 @@ service cloud.firestore {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
-                            <DropdownMenuItem>Eliminar</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditDriver(driver)}>Editar</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDeletingDriverId(driver.id)} className="text-destructive">Eliminar</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -1381,7 +2196,19 @@ service cloud.firestore {
         <TabsContent value="vehicles" className="mt-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold font-headline">Vehículos</h2>
-            <Dialog open={vehicleDialogOpen} onOpenChange={setVehicleDialogOpen}>
+            <Dialog open={vehicleDialogOpen} onOpenChange={(open) => {
+              setVehicleDialogOpen(open);
+              if (!open) {
+                setEditingVehicle(null);
+                setVehicleForm({
+                  licensePlate: '',
+                  make: '',
+                  model: '',
+                  type: '',
+                  driverId: '',
+                });
+              }
+            }}>
               <DialogTrigger asChild>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -1390,9 +2217,9 @@ service cloud.firestore {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle className="font-headline text-2xl">Agregar Nuevo Vehículo</DialogTitle>
+                  <DialogTitle className="font-headline text-2xl">{editingVehicle ? 'Editar Vehículo' : 'Agregar Nuevo Vehículo'}</DialogTitle>
                   <DialogDescription>
-                    Completa los detalles para registrar un nuevo vehículo.
+                    {editingVehicle ? 'Modifica los detalles del vehículo.' : 'Completa los detalles para registrar un nuevo vehículo.'}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -1465,58 +2292,61 @@ service cloud.firestore {
                   </Button>
                   <Button
                     onClick={async () => {
-                      if (!vehicleForm.licensePlate || !vehicleForm.make || !vehicleForm.model) {
-                        toast({
-                          title: "Error",
-                          description: "Por favor completa todos los campos obligatorios (Placa, Marca, Modelo)",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      
-                      // Verificar que el usuario esté autenticado
-                      if (!firebaseUser) {
-                        toast({
-                          title: "Error de autenticación",
-                          description: "No estás autenticado. Por favor, recarga la página.",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      
-                      setSavingVehicle(true);
-                      try {
-                        // Verificar que db esté inicializado
-                        if (!db) {
-                          throw new Error('Firestore no está inicializado');
+                      if (editingVehicle) {
+                        await handleUpdateVehicle();
+                      } else {
+                        if (!vehicleForm.licensePlate || !vehicleForm.make || !vehicleForm.model) {
+                          toast({
+                            title: "Error",
+                            description: "Por favor completa todos los campos obligatorios (Placa, Marca, Modelo)",
+                            variant: "destructive",
+                          });
+                          return;
                         }
                         
-                        // Log para diagnóstico
-                        console.log('Intentando guardar vehículo:', {
-                          user: firebaseUser?.uid,
-                          isAnonymous: firebaseUser?.isAnonymous,
-                          db: !!db
-                        });
+                        // Verificar que el usuario esté autenticado
+                        if (!firebaseUser) {
+                          toast({
+                            title: "Error de autenticación",
+                            description: "No estás autenticado. Por favor, recarga la página.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
                         
-                        const vehicleData = {
-                          licensePlate: vehicleForm.licensePlate.trim(),
-                          plate: vehicleForm.licensePlate.trim(), // Alias para compatibilidad
-                          make: vehicleForm.make.trim(),
-                          model: vehicleForm.model.trim(),
-                          type: vehicleForm.type.trim() || undefined,
-                          tipo: vehicleForm.type.trim() || undefined, // Alias para compatibilidad
-                          driverId: vehicleForm.driverId.trim() || undefined,
-                          fechaRegistro: new Date().toISOString(),
-                        };
-                        
-                        console.log('Datos del vehículo a guardar:', vehicleData);
-                        
-                        // Add vehicle to Firestore
-                        let docRef;
+                        setSavingVehicle(true);
                         try {
-                          docRef = await addDoc(collection(db, 'vehicles'), vehicleData);
-                          console.log('Vehículo guardado exitosamente con ID:', docRef.id);
-                        } catch (firestoreError: any) {
+                          // Verificar que db esté inicializado
+                          if (!db) {
+                            throw new Error('Firestore no está inicializado');
+                          }
+                          
+                          // Log para diagnóstico
+                          console.log('Intentando guardar vehículo:', {
+                            user: firebaseUser?.uid,
+                            isAnonymous: firebaseUser?.isAnonymous,
+                            db: !!db
+                          });
+                          
+                          const vehicleData = {
+                            licensePlate: vehicleForm.licensePlate.trim(),
+                            plate: vehicleForm.licensePlate.trim(), // Alias para compatibilidad
+                            make: vehicleForm.make.trim(),
+                            model: vehicleForm.model.trim(),
+                            type: vehicleForm.type.trim() || undefined,
+                            tipo: vehicleForm.type.trim() || undefined, // Alias para compatibilidad
+                            driverId: vehicleForm.driverId.trim() || undefined,
+                            fechaRegistro: new Date().toISOString(),
+                          };
+                          
+                          console.log('Datos del vehículo a guardar:', vehicleData);
+                          
+                          // Add vehicle to Firestore
+                          let docRef;
+                          try {
+                            docRef = await addDoc(collection(db, 'vehicles'), vehicleData);
+                            console.log('Vehículo guardado exitosamente con ID:', docRef.id);
+                          } catch (firestoreError: any) {
                           // Capturar error específico de Firestore con más detalles
                           const firestoreErrorInfo: any = {
                             error: firestoreError,
@@ -1666,25 +2496,44 @@ Código: ${errorCode || 'N/A'}`;
                       } finally {
                         setSavingVehicle(false);
                       }
+                      }
                     }}
                     disabled={savingVehicle}
                   >
                     {savingVehicle ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Guardando...
+                        {editingVehicle ? 'Actualizando...' : 'Guardando...'}
                       </>
                     ) : (
-                      'Guardar Vehículo'
+                      editingVehicle ? 'Actualizar Vehículo' : 'Guardar Vehículo'
                     )}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            
+            {/* AlertDialog para confirmar eliminación de vehículo */}
+            <AlertDialog open={deletingVehicleId !== null} onOpenChange={(open) => !open && setDeletingVehicleId(null)}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción no se puede deshacer. Esto eliminará permanentemente el vehículo seleccionado.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteVehicle} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Eliminar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
-           <div className="mt-4 rounded-lg border bg-card text-card-foreground shadow-sm">
+           <div className="mt-4 rounded-lg border bg-card text-card-foreground shadow-sm overflow-x-auto">
             {loading ? renderLoading() : (
-              <Table>
+              <Table className="min-w-[600px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Placa</TableHead>
@@ -1782,8 +2631,8 @@ Código: ${errorCode || 'N/A'}`;
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
-                            <DropdownMenuItem>Eliminar</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditVehicle(vehicle)}>Editar</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDeletingVehicleId(vehicle.id)} className="text-destructive">Eliminar</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -1800,7 +2649,23 @@ Código: ${errorCode || 'N/A'}`;
         <TabsContent value="users" className="mt-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold font-headline">Usuarios</h2>
-            <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
+            <Dialog open={userDialogOpen} onOpenChange={(open) => {
+              setUserDialogOpen(open);
+              if (!open) {
+                setEditingUser(null);
+                setUserForm({
+                  dni: '',
+                  nombres: '',
+                  apellidoPaterno: '',
+                  apellidoMaterno: '',
+                  fechaNacimiento: undefined,
+                  direccion: '',
+                  email: '',
+                  password: '',
+                  role: 'assistant',
+                });
+              }
+            }}>
               <DialogTrigger asChild>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -1809,9 +2674,9 @@ Código: ${errorCode || 'N/A'}`;
               </DialogTrigger>
               <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle className="font-headline text-2xl">Nuevo Usuario</DialogTitle>
+                  <DialogTitle className="font-headline text-2xl">{editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
                   <DialogDescription>
-                    Completa todos los campos para crear un nuevo usuario en el sistema.
+                    {editingUser ? 'Modifica los detalles del usuario.' : 'Completa todos los campos para crear un nuevo usuario en el sistema.'}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -1968,123 +2833,127 @@ Código: ${errorCode || 'N/A'}`;
                   </Button>
                   <Button
                     onClick={async () => {
-                      if (!userForm.dni || !userForm.nombres || !userForm.email || !userForm.password) {
-                        toast({
-                          title: "Error",
-                          description: "Por favor completa todos los campos obligatorios (DNI, Nombres, Email, Contraseña)",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      
-                      // Verificar que el usuario esté autenticado
-                      if (!firebaseUser) {
-                        toast({
-                          title: "Error de autenticación",
-                          description: "No estás autenticado. Por favor, recarga la página.",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      
-                      setSavingUser(true);
-                      try {
-                        // Create user in Firebase Auth if email and password are provided
-                        let authUser = null;
-                        if (userForm.email && userForm.password) {
-                          try {
-                            // Note: This requires Firebase Auth to be configured
-                            // For now, we'll just create the Firestore document
-                          } catch (authError) {
-                            console.error("Error creating auth user:", authError);
-                            // Continue anyway to create the Firestore document
+                      if (editingUser) {
+                        await handleUpdateUser();
+                      } else {
+                        if (!userForm.dni || !userForm.nombres || !userForm.email || !userForm.password) {
+                          toast({
+                            title: "Error",
+                            description: "Por favor completa todos los campos obligatorios (DNI, Nombres, Email, Contraseña)",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        
+                        // Verificar que el usuario esté autenticado
+                        if (!firebaseUser) {
+                          toast({
+                            title: "Error de autenticación",
+                            description: "No estás autenticado. Por favor, recarga la página.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        
+                        setSavingUser(true);
+                        try {
+                          // Create user in Firebase Auth if email and password are provided
+                          let authUser = null;
+                          if (userForm.email && userForm.password) {
+                            try {
+                              // Note: This requires Firebase Auth to be configured
+                              // For now, we'll just create the Firestore document
+                            } catch (authError) {
+                              console.error("Error creating auth user:", authError);
+                              // Continue anyway to create the Firestore document
+                            }
                           }
-                        }
-                        
-                        // Calculate age from fechaNacimiento
-                        let edad = undefined;
-                        if (userForm.fechaNacimiento) {
-                          const today = new Date();
-                          const birthDate = userForm.fechaNacimiento;
-                          edad = today.getFullYear() - birthDate.getFullYear();
-                          const monthDiff = today.getMonth() - birthDate.getMonth();
-                          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                            edad--;
+                          
+                          // Calculate age from fechaNacimiento
+                          let edad = undefined;
+                          if (userForm.fechaNacimiento) {
+                            const today = new Date();
+                            const birthDate = userForm.fechaNacimiento;
+                            edad = today.getFullYear() - birthDate.getFullYear();
+                            const monthDiff = today.getMonth() - birthDate.getMonth();
+                            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                              edad--;
+                            }
                           }
+                          
+                          // Create nombresCompletos
+                          const nombresCompletos = `${userForm.nombres} ${userForm.apellidoPaterno} ${userForm.apellidoMaterno}`.trim();
+                          
+                          // Create username from email
+                          const username = userForm.email;
+                          
+                          // Prepare user data for Firestore
+                          const userData = {
+                            dni: userForm.dni,
+                            nombres: userForm.nombres.trim(),
+                            apellidoPaterno: userForm.apellidoPaterno.trim(),
+                            apellidoMaterno: userForm.apellidoMaterno.trim(),
+                            nombresCompletos: nombresCompletos,
+                            fechaNacimiento: userForm.fechaNacimiento ? format(userForm.fechaNacimiento, 'yyyy-MM-dd') : '',
+                            edad: edad,
+                            direccion: userForm.direccion.trim(),
+                            username: username,
+                            email: userForm.email.trim(),
+                            role: userForm.role.trim() || 'assistant',
+                            fechaRegistro: new Date().toISOString(),
+                          };
+                          
+                          // Add user to Firestore
+                          const docRef = await addDoc(collection(db, 'users'), userData);
+                          
+                          toast({
+                            title: "Usuario creado",
+                            description: `El usuario ${nombresCompletos} ha sido creado exitosamente.`,
+                          });
+                          
+                          // Reset form and close dialog
+                          setUserForm({
+                            dni: '',
+                            nombres: '',
+                            apellidoPaterno: '',
+                            apellidoMaterno: '',
+                            fechaNacimiento: undefined,
+                            direccion: '',
+                            email: '',
+                            password: '',
+                            role: 'assistant',
+                          });
+                          setUserDialogOpen(false);
+                          
+                          // Refresh users list
+                          const usersSnapshot = await getDocs(collection(db, 'users'));
+                          const usersData = usersSnapshot.docs.map(doc => {
+                            const data = doc.data();
+                            return { ...data, id: doc.id } as User;
+                          });
+                          const uniqueUsers = usersData.filter((user, index, self) => 
+                            index === self.findIndex((u) => u.id === user.id)
+                          );
+                          setUsers(uniqueUsers);
+                        } catch (error: any) {
+                          console.error('Error creating user:', error);
+                          let errorMessage = error.message || 'Error desconocido';
+                          
+                          // Mejorar mensaje de error para permisos
+                          if (error.code === 'permission-denied') {
+                            errorMessage = 'No tienes permisos para crear usuarios. Verifica las reglas de Firestore o contacta al administrador.';
+                          } else if (error.message?.includes('permission')) {
+                            errorMessage = 'Error de permisos. Verifica que estés autenticado correctamente.';
+                          }
+                          
+                          toast({
+                            title: "Error",
+                            description: `No se pudo crear el usuario: ${errorMessage}`,
+                            variant: "destructive",
+                          });
+                        } finally {
+                          setSavingUser(false);
                         }
-                        
-                        // Create nombresCompletos
-                        const nombresCompletos = `${userForm.nombres} ${userForm.apellidoPaterno} ${userForm.apellidoMaterno}`.trim();
-                        
-                        // Create username from email
-                        const username = userForm.email;
-                        
-                        // Prepare user data for Firestore
-                        const userData = {
-                          dni: userForm.dni,
-                          nombres: userForm.nombres.trim(),
-                          apellidoPaterno: userForm.apellidoPaterno.trim(),
-                          apellidoMaterno: userForm.apellidoMaterno.trim(),
-                          nombresCompletos: nombresCompletos,
-                          fechaNacimiento: userForm.fechaNacimiento ? format(userForm.fechaNacimiento, 'yyyy-MM-dd') : '',
-                          edad: edad,
-                          direccion: userForm.direccion.trim(),
-                          username: username,
-                          email: userForm.email.trim(),
-                          role: userForm.role.trim() || 'assistant',
-                          fechaRegistro: new Date().toISOString(),
-                        };
-                        
-                        // Add user to Firestore
-                        const docRef = await addDoc(collection(db, 'users'), userData);
-                        
-                        toast({
-                          title: "Usuario creado",
-                          description: `El usuario ${nombresCompletos} ha sido creado exitosamente.`,
-                        });
-                        
-                        // Reset form and close dialog
-                        setUserForm({
-                          dni: '',
-                          nombres: '',
-                          apellidoPaterno: '',
-                          apellidoMaterno: '',
-                          fechaNacimiento: undefined,
-                          direccion: '',
-                          email: '',
-                          password: '',
-                          role: 'assistant',
-                        });
-                        setUserDialogOpen(false);
-                        
-                        // Refresh users list
-                        const usersSnapshot = await getDocs(collection(db, 'users'));
-                        const usersData = usersSnapshot.docs.map(doc => {
-                          const data = doc.data();
-                          return { ...data, id: doc.id } as User;
-                        });
-                        const uniqueUsers = usersData.filter((user, index, self) => 
-                          index === self.findIndex((u) => u.id === user.id)
-                        );
-                        setUsers(uniqueUsers);
-                      } catch (error: any) {
-                        console.error('Error creating user:', error);
-                        let errorMessage = error.message || 'Error desconocido';
-                        
-                        // Mejorar mensaje de error para permisos
-                        if (error.code === 'permission-denied') {
-                          errorMessage = 'No tienes permisos para crear usuarios. Verifica las reglas de Firestore o contacta al administrador.';
-                        } else if (error.message?.includes('permission')) {
-                          errorMessage = 'Error de permisos. Verifica que estés autenticado correctamente.';
-                        }
-                        
-                        toast({
-                          title: "Error",
-                          description: `No se pudo crear el usuario: ${errorMessage}`,
-                          variant: "destructive",
-                        });
-                      } finally {
-                        setSavingUser(false);
                       }
                     }}
                     disabled={savingUser}
@@ -2092,19 +2961,37 @@ Código: ${errorCode || 'N/A'}`;
                     {savingUser ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Guardando...
+                        {editingUser ? 'Actualizando...' : 'Guardando...'}
                       </>
                     ) : (
-                      'Guardar Usuario'
+                      editingUser ? 'Actualizar Usuario' : 'Guardar Usuario'
                     )}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            
+            {/* AlertDialog para confirmar eliminación de usuario */}
+            <AlertDialog open={deletingUserId !== null} onOpenChange={(open) => !open && setDeletingUserId(null)}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción no se puede deshacer. Esto eliminará permanentemente el usuario seleccionado.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Eliminar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
-           <div className="mt-4 rounded-lg border bg-card text-card-foreground shadow-sm">
+           <div className="mt-4 rounded-lg border bg-card text-card-foreground shadow-sm overflow-x-auto">
             {loading ? renderLoading() : (
-                <Table>
+                <Table className="min-w-[600px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nombre Completo</TableHead>
@@ -2145,8 +3032,8 @@ Código: ${errorCode || 'N/A'}`;
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>Editar</DropdownMenuItem>
-                              <DropdownMenuItem>Eliminar</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEditUser(user)}>Editar</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setDeletingUserId(user.id)} className="text-destructive">Eliminar</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

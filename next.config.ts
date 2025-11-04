@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
         hostname: '*.tile.openstreetmap.org',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.firebasestorage.app',
+        port: '',
+        pathname: '/**',
       }
     ],
   },

@@ -6,6 +6,8 @@ import 'leaflet/dist/leaflet.css';
 import { Button } from '@/components/ui/button';
 import { Pause, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { createNotification } from '@/lib/notifications';
+import { auth } from '@/app/management/firebase';
 import type { ActiveVehicle } from '@/lib/types';
 
 const createCustomIcon = () => {
@@ -144,12 +146,25 @@ export default function MapWrapper({ vehicles: initialVehicles, selectedVehicleI
     if (movementCount >= 15) {
       setHasNotified(true);
       
-      // Mostrar notificación
+      // Mostrar notificación toast
       toast({
         title: "Vehículo llegó al destino",
         description: `El vehículo ha llegado a ${destination}. No te olvides asignar más rutas.`,
         duration: 5000,
       });
+
+      // Crear notificación persistente en Firestore
+      if (auth.currentUser) {
+        createNotification(
+          auth.currentUser.uid,
+          'Vehículo llegó al destino',
+          `El vehículo ha llegado a ${destination}. No te olvides asignar más rutas.`,
+          'success',
+          '/tracking'
+        ).catch(error => {
+          console.error('Error creating notification:', error);
+        });
+      }
 
       // Notificar al componente padre
       if (onDestinationReached) {

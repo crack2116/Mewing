@@ -24,27 +24,27 @@ service cloud.firestore {
     match /clients/{clientId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
-      allow create: if isSignedIn();  // Cambiado de isAdmin() a isSignedIn() para permitir crear
-      allow update: if isSignedIn() && isAdmin();
-      allow delete: if isSignedIn() && isAdmin();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     // Drivers
     match /drivers/{driverId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
-      allow create: if isSignedIn();  // Cambiado de isAdmin() a isSignedIn() para permitir crear
-      allow update: if isSignedIn() && isAdmin();
-      allow delete: if isSignedIn() && isAdmin();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     // Vehicles
     match /vehicles/{vehicleId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
-      allow create: if isSignedIn();  // Cambiado de isAdmin() a isSignedIn() para permitir crear
-      allow update: if isSignedIn() && isAdmin();
-      allow delete: if isSignedIn() && isAdmin();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     // Service Requests
@@ -52,17 +52,26 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && isAdmin();
+      allow update: if isSignedIn();
       allow delete: if isSignedIn() && isAdmin();
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow get: if isSignedIn() && isOwner(resource.data.userId);
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isOwner(resource.data.userId);
+      allow delete: if isSignedIn() && isOwner(resource.data.userId);
     }
 
     // Routes
     match /routes/{routeId} {
-      allow get: if isSignedIn() && isAdmin();
+      allow get: if isSignedIn();
       allow list: if isSignedIn();
-      allow create: if isSignedIn() && isAdmin();
-      allow update: if isSignedIn() && isAdmin();
-      allow delete: if isSignedIn() && isAdmin();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     // Helpers
