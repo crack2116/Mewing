@@ -5,7 +5,8 @@ import {
   Users,
   LineChart,
   Map,
-  Home
+  Home,
+  LifeBuoy
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -18,6 +19,7 @@ const navItems = [
   { href: '/management', icon: Users, label: 'Gestión' },
   { href: '/tracking', icon: Map, label: 'Seguimiento' },
   { href: '/reports', icon: LineChart, label: 'Reportes' },
+  { href: '/support', icon: LifeBuoy, label: 'Soporte' },
 ];
 
 export default function Sidebar() {
@@ -39,7 +41,7 @@ export default function Sidebar() {
                 href={href}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary hover:bg-muted",
-                  pathname === href && "bg-muted text-primary font-semibold"
+                  (pathname === href || (href === '/services' && pathname.startsWith('/services'))) && "bg-muted text-primary font-semibold"
                 )}
               >
                 <Icon className="h-4 w-4" />

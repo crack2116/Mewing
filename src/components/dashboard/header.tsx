@@ -1,5 +1,5 @@
 'use client';
-import { Search, Bell, Menu, Moon, Sun } from "lucide-react";
+import { Search, Bell, Menu, Moon, Sun, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -41,10 +41,11 @@ export default function Header() {
     { href: '/management', label: 'Gestión' },
     { href: '/tracking', label: 'Seguimiento' },
     { href: '/reports', label: 'Reportes' },
+    { href: '/support', label: 'Soporte' },
     { href: '/profile', label: 'Perfil' },
   ];
 
-  const currentPage = navItems.find(item => item.href === pathname)?.label || 'Página';
+  const currentPage = navItems.find(item => pathname.startsWith(item.href) && (item.href !== '/' || pathname === '/'))?.label || 'Página';
 
   return (
     <header className="sticky top-0 z-30 flex h-20 items-center gap-4 border-b bg-background px-4 sm:px-6">
@@ -106,10 +107,12 @@ export default function Header() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Link href="/profile" className="w-full">Perfil</Link>
+              <DropdownMenuItem asChild>
+                <Link href="/profile" className="w-full cursor-pointer">Perfil</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>Soporte</DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                 <Link href="/support" className="w-full cursor-pointer">Soporte</Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>Cerrar Sesión</DropdownMenuItem>
             </DropdownMenuContent>
