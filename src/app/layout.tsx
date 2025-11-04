@@ -7,6 +7,11 @@ import ProtectedLayout from '@/components/protected-layout';
 export const metadata: Metadata = {
   title: 'Mewing',
   description: 'Panel de Control',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export default function RootLayout({

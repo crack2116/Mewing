@@ -1,0 +1,52 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo redondeado -->
+  <rect width="64" height="64" rx="12" fill="#0a0a0a"/>
+  
+  <!-- Camión -->
+  <g transform="translate(8, 20)">
+    <!-- Cabina del camión -->
+    <rect x="4" y="12" width="16" height="12" rx="2" fill="#3b82f6"/>
+    <rect x="6" y="14" width="12" height="8" rx="1" fill="#1e40af"/>
+    
+    <!-- Ventana del camión -->
+    <rect x="6" y="14" width="8" height="6" rx="1" fill="#60a5fa"/>
+    
+    <!-- Caja de carga -->
+    <rect x="20" y="16" width="20" height="8" rx="1" fill="#3b82f6"/>
+    <rect x="22" y="18" width="16" height="4" rx="0.5" fill="#1e40af"/>
+    
+    <!-- Ruedas -->
+    <circle cx="12" cy="28" r="4" fill="#1f2937"/>
+    <circle cx="12" cy="28" r="2.5" fill="#374151"/>
+    <circle cx="12" cy="28" r="1.5" fill="#6b7280"/>
+    
+    <circle cx="32" cy="28" r="4" fill="#1f2937"/>
+    <circle cx="32" cy="28" r="2.5" fill="#374151"/>
+    <circle cx="32" cy="28" r="1.5" fill="#6b7280"/>
+    
+    <!-- Detalles -->
+    <line x1="8" y1="18" x2="8" y2="22" stroke="#60a5fa" stroke-width="1"/>
+    <line x1="12" y1="18" x2="12" y2="22" stroke="#60a5fa" stroke-width="1"/>
+    
+    <!-- Líneas de la caja -->
+    <line x1="24" y1="18" x2="24" y2="22" stroke="#1e40af" stroke-width="0.5"/>
+    <line x1="28" y1="18" x2="28" y2="22" stroke="#1e40af" stroke-width="0.5"/>
+    <line x1="32" y1="18" x2="32" y2="22" stroke="#1e40af" stroke-width="0.5"/>
+    <line x1="36" y1="18" x2="36" y2="22" stroke="#1e40af" stroke-width="0.5"/>
+    
+    <!-- Faros -->
+    <circle cx="4" cy="18" r="1.5" fill="#fbbf24"/>
+    <circle cx="4" cy="20" r="1.5" fill="#ef4444"/>
+  </g>
+  
+  <!-- Efecto de brillo -->
+  <rect x="4" y="4" width="56" height="56" rx="10" fill="none" stroke="url(#gradient)" stroke-width="2" opacity="0.3"/>
+  
+  <defs>
+    <linearGradient id="gradient" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+</svg>
+
