@@ -38,7 +38,15 @@ yarn-error.log*
 next-env.d.ts
 
 .genkit/*
+# .env files - ⚠️ ADVERTENCIA: Esto permite subir .env a git (NO RECOMENDADO)
+# ⚠️ RIESGO DE SEGURIDAD: Tus credenciales estarán expuestas en el repositorio
+# Ignorar todos los .env excepto .env y .env.local específicamente
 .env*
+!.env
+!.env.local
+# Mantener protegidos otros archivos de entorno
+.env.development
+.env.production
 
 # firebase
 firebase-debug.log
