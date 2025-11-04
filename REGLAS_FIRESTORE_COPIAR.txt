@@ -1,0 +1,110 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow delete: if isSignedIn() && (isOwner(userId) || isAdmin());
+    }
+
+    // Admin roles
+    match /roles_admin/{userId} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if isSignedIn() && isNewAdmin(userId);
+      allow update: if false;
+      allow delete: if isSignedIn() && isAdmin();
+    }
+
+    // Clients
+    match /clients/{clientId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
+    }
+
+    // Drivers
+    match /drivers/{driverId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
+    }
+
+    // Vehicles
+    match /vehicles/{vehicleId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
+    }
+
+    // Service Requests
+    match /serviceRequests/{serviceRequestId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
+    }
+
+    // Routes
+    match /routes/{routeId} {
+      allow get: if isSignedIn() && isAdmin();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isAdmin();
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
+    }
+
+    // Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    function isExistingAdmin(userId) {
+      return exists(/databases/$(database)/documents/roles_admin/$(userId));
+    }
+
+    function isNewAdmin(userId) {
+      return !exists(/databases/$(database)/documents/roles_admin/$(userId));
+    }
+
+    function isExistingDriver(driverId) {
+      return exists(/databases/$(database)/documents/drivers/$(driverId));
+    }
+
+    function isExistingVehicle(vehicleId) {
+      return exists(/databases/$(database)/documents/vehicles/$(vehicleId));
+    }
+
+    function isExistingServiceRequest(serviceRequestId) {
+      return exists(/databases/$(database)/documents/serviceRequests/$(serviceRequestId));
+    }
+
+    function isExistingRoute(routeId) {
+      return exists(/databases/$(database)/documents/routes/$(routeId));
+    }
+
+    function isExistingOwner(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId));
+    }
+  }
+}
+

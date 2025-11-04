@@ -327,10 +327,10 @@ export default function TrackingActions({ vehicles = [], onRouteAssigned }: Trac
     <div className="flex items-center gap-4 tracking-route-dialog">
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline">
-            <MapPin className="mr-2 h-4 w-4" />
-            Asignar Rutas
-          </Button>
+      <Button variant="outline">
+        <MapPin className="mr-2 h-4 w-4" />
+        Asignar Rutas
+      </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[600px] [&>button]:hidden z-[9999] bg-card/95 backdrop-blur-sm">
           <DialogHeader className="space-y-3 pb-6 border-b border-border/50">
@@ -375,9 +375,9 @@ export default function TrackingActions({ vehicles = [], onRouteAssigned }: Trac
                     ref={vehicleSuggestionsRef}
                     className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-64 overflow-auto"
                   >
-                    {vehicleSuggestions.map((vehicle) => (
+                    {vehicleSuggestions.map((vehicle, index) => (
                       <button
-                        key={vehicle.id}
+                        key={vehicle.otherId || `${vehicle.id}-${index}`}
                         type="button"
                         onClick={() => selectVehicle(vehicle)}
                         className="w-full text-left px-4 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer first:rounded-t-md last:rounded-b-md"
@@ -510,8 +510,8 @@ export default function TrackingActions({ vehicles = [], onRouteAssigned }: Trac
               size="lg"
             >
               <PlayCircle className="mr-2 h-5 w-5" />
-              Iniciar Movimiento
-            </Button>
+        Iniciar Movimiento
+      </Button>
           </div>
         </DialogContent>
       </Dialog>

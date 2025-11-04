@@ -68,25 +68,25 @@ export default function MapWrapper({ vehicles: initialVehicles, selectedVehicleI
     }).addTo(map);
 
     initialVehicles.forEach((vehicle) => {
+        const popupContent = `
+          <div style="font-family: system-ui, -apple-system, sans-serif; line-height: 1.6;">
+            <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">${vehicle.id}</div>
+            <div style="font-size: 13px; margin: 4px 0;"><strong>Conductor:</strong> ${vehicle.driverId}</div>
+            <div style="font-size: 13px; margin: 4px 0;"><strong>Vehículo:</strong> ${vehicle.model}</div>
+            <div style="font-size: 13px; margin: 4px 0;"><strong>Estado:</strong> ${vehicle.status}</div>
+            <div style="font-size: 13px; margin: 4px 0;"><strong>Actualizado:</strong> ${vehicle.time}</div>
+          </div>
+        `;
+        
         const marker = L.marker(vehicle.position, { icon: createCustomIcon() })
         .addTo(map)
-        .bindPopup(`<b>${vehicle.id}</b><br />${vehicle.model}`);
+        .bindPopup(popupContent);
         markerRefs.current.set(vehicle.id, marker);
         
-        // Inicializar historial de ruta con la posición inicial
+        // Inicializar historial de ruta con la posición inicial (pero no crear polyline aún)
         pathHistoryRef.current.set(vehicle.id, [L.latLng(vehicle.position[0], vehicle.position[1])]);
         
-        // Crear polilínea roja para el seguimiento
-        const polyline = L.polyline(
-            [[vehicle.position[0], vehicle.position[1]]],
-            {
-                color: '#ef4444',
-                weight: 3,
-                opacity: 0.7,
-                smoothFactor: 1
-            }
-        ).addTo(map);
-        polylineRefs.current.set(vehicle.id, polyline);
+        // NO crear polilínea roja aquí - solo se creará cuando se asigne una ruta
     });
 
     return () => {
@@ -172,32 +172,74 @@ export default function MapWrapper({ vehicles: initialVehicles, selectedVehicleI
   useEffect(() => {
     vehicles.forEach((vehicle) => {
       const marker = markerRefs.current.get(vehicle.id);
-      const polyline = polylineRefs.current.get(vehicle.id);
+      let polyline = polylineRefs.current.get(vehicle.id);
       const pathHistory = pathHistoryRef.current.get(vehicle.id);
       
       if (marker) {
         const currentLatLng = L.latLng(vehicle.position[0], vehicle.position[1]);
         const previousLatLng = pathHistory && pathHistory.length > 0 ? pathHistory[pathHistory.length - 1] : null;
         
+        // Actualizar contenido del popup
+        const popupContent = `
+          <div style="font-family: system-ui, -apple-system, sans-serif; line-height: 1.6;">
+            <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">${vehicle.id}</div>
+            <div style="font-size: 13px; margin: 4px 0;"><strong>Conductor:</strong> ${vehicle.driverId}</div>
+            <div style="font-size: 13px; margin: 4px 0;"><strong>Vehículo:</strong> ${vehicle.model}</div>
+            <div style="font-size: 13px; margin: 4px 0;"><strong>Estado:</strong> ${vehicle.status}</div>
+            <div style="font-size: 13px; margin: 4px 0;"><strong>Actualizado:</strong> ${vehicle.time}</div>
+          </div>
+        `;
+        marker.setPopupContent(popupContent);
+        
         // Actualizar posición del marcador
         marker.setLatLng(vehicle.position);
         
-        // Solo agregar al historial si la posición cambió significativamente
-        if (!previousLatLng || currentLatLng.distanceTo(previousLatLng) > 0.0001) {
-          // Actualizar historial de ruta
-          if (pathHistory) {
-            pathHistory.push(currentLatLng);
-            pathHistoryRef.current.set(vehicle.id, pathHistory);
-            
-            // Actualizar polilínea con todas las posiciones
-            if (polyline) {
-              polyline.setLatLngs(pathHistory);
+        // Solo crear/actualizar polyline si el vehículo está en movimiento (canMove y es el movingVehicleId)
+        const isMoving = canMove && movingVehicleId === vehicle.id;
+        
+        if (isMoving) {
+          // Crear polyline si no existe y el vehículo está en movimiento
+          if (!polyline && mapRef.current) {
+            polyline = L.polyline(
+              [[vehicle.position[0], vehicle.position[1]]],
+              {
+                color: '#ef4444',
+                weight: 3,
+                opacity: 0.7,
+                smoothFactor: 1
+              }
+            ).addTo(mapRef.current);
+            polylineRefs.current.set(vehicle.id, polyline);
+          }
+          
+          // Solo agregar al historial si la posición cambió significativamente
+          if (!previousLatLng || currentLatLng.distanceTo(previousLatLng) > 0.0001) {
+            // Actualizar historial de ruta
+            if (pathHistory) {
+              pathHistory.push(currentLatLng);
+            } else {
+              pathHistoryRef.current.set(vehicle.id, [currentLatLng]);
             }
+            
+            // Actualizar polyline con el nuevo historial (solo si existe y está en movimiento)
+            if (polyline) {
+              const currentHistory = pathHistoryRef.current.get(vehicle.id) || [currentLatLng];
+              const latlngs = currentHistory.map(latlng => [latlng.lat, latlng.lng]);
+              polyline.setLatLngs(latlngs);
+            }
+          }
+        } else {
+          // Si el vehículo no está en movimiento, eliminar la polyline si existe
+          if (polyline && mapRef.current) {
+            mapRef.current.removeLayer(polyline);
+            polylineRefs.current.delete(vehicle.id);
+            // Resetear historial cuando se detiene el movimiento
+            pathHistoryRef.current.set(vehicle.id, [L.latLng(vehicle.position[0], vehicle.position[1])]);
           }
         }
       }
     });
-  }, [vehicles]);
+  }, [vehicles, canMove, movingVehicleId]);
 
   useEffect(() => {
     if (selectedVehicleId && mapRef.current) {

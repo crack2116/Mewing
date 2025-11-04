@@ -22,9 +22,9 @@ export default function ActiveVehicles({ vehicles, onVehicleClick, selectedVehic
       <CardContent>
         <ScrollArea className="h-[350px]">
           <div className="space-y-6">
-            {vehicles.map((vehicle) => (
+            {vehicles.map((vehicle, index) => (
               <div 
-                key={vehicle.id} 
+                key={vehicle.otherId || `${vehicle.id}-${index}`} 
                 onClick={() => onVehicleClick(vehicle.id)}
                 className={`flex items-start justify-between p-3 rounded-lg cursor-pointer transition-all hover:bg-muted/50 ${
                   selectedVehicleId === vehicle.id ? 'bg-primary/10 border-2 border-primary' : ''
