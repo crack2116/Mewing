@@ -6,9 +6,11 @@ import type { ActiveVehicle } from '@/lib/types';
 
 interface ActiveVehiclesProps {
     vehicles: ActiveVehicle[];
+    onVehicleClick: (vehicleId: string) => void;
+    selectedVehicleId: string | null;
 }
 
-export default function ActiveVehicles({ vehicles }: ActiveVehiclesProps) {
+export default function ActiveVehicles({ vehicles, onVehicleClick, selectedVehicleId }: ActiveVehiclesProps) {
   return (
     <Card className="h-full">
       <CardHeader>
@@ -21,7 +23,13 @@ export default function ActiveVehicles({ vehicles }: ActiveVehiclesProps) {
         <ScrollArea className="h-[350px]">
           <div className="space-y-6">
             {vehicles.map((vehicle) => (
-              <div key={vehicle.id} className="flex items-start justify-between">
+              <div 
+                key={vehicle.id} 
+                onClick={() => onVehicleClick(vehicle.id)}
+                className={`flex items-start justify-between p-3 rounded-lg cursor-pointer transition-all hover:bg-muted/50 ${
+                  selectedVehicleId === vehicle.id ? 'bg-primary/10 border-2 border-primary' : ''
+                }`}
+              >
                 <div className="flex items-start gap-4">
                   <div className="bg-muted p-3 rounded-lg">
                     <Truck className="h-5 w-5 text-muted-foreground" />

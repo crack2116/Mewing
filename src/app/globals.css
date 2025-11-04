@@ -67,3 +67,14 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Overlay más transparente para ver el mapa detrás */
+body:has(.tracking-route-dialog [data-state="open"]) [data-radix-dialog-overlay] {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+  z-index: 9998 !important;
+}
+
+/* Asegurar que el modal esté siempre adelante del mapa */
+.tracking-route-dialog [data-radix-dialog-content] {
+  z-index: 9999 !important;
+}

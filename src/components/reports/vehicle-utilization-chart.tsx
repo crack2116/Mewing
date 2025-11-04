@@ -2,7 +2,11 @@
 
 import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts"
 
-const data = [
+interface VehicleUtilizationChartProps {
+  data?: Array<{ name: string; utilization: number }>;
+}
+
+const defaultData = [
   { name: "27 oct", utilization: 80 },
   { name: "28 oct", utilization: 78 },
   { name: "29 oct", utilization: 79 },
@@ -12,7 +16,7 @@ const data = [
   { name: "2 nov", utilization: 78 },
 ];
 
-export default function VehicleUtilizationChart() {
+export default function VehicleUtilizationChart({ data = defaultData }: VehicleUtilizationChartProps) {
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
