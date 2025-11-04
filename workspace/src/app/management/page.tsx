@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { db } from '../../lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import {
   Building2,
@@ -355,5 +355,3 @@ export default function ManagementPage() {
     </>
   );
 }
-
-    
