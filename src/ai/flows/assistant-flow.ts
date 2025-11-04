@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { GenerateRequest } from '@genkit-ai/google-genai';
+import type { GenerateRequest } from '@genkit-ai/google-genai';
 
 const HistoryPartSchema = z.object({
   text: z.string(),
@@ -20,13 +20,13 @@ const HistoryItemSchema = z.object({
   parts: z.array(HistoryPartSchema),
 });
 
-export const AssistantInputSchema = z.object({
+const AssistantInputSchema = z.object({
   prompt: z.string(),
   history: z.array(HistoryItemSchema),
 });
 export type AssistantInput = z.infer<typeof AssistantInputSchema>;
 
-export const AssistantOutputSchema = z.string();
+const AssistantOutputSchema = z.string();
 export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
 
 export async function virtualAssistant(input: AssistantInput): Promise<AssistantOutput> {
@@ -65,6 +65,7 @@ const virtualAssistantFlow = ai.defineFlow(
     const { history, prompt } = input;
 
     const request: GenerateRequest = {
+      model: 'googleai/gemini-2.5-flash',
       history: [
         systemInstruction,
         ...history,
