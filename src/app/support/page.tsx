@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { SendHorizonal, Bot, User, Loader2 } from 'lucide-react';
+import { SendHorizonal, Bot, User, Loader2, Trash2 } from 'lucide-react';
 import { virtualAssistant, AssistantInput } from '@/ai/flows/assistant-flow';
 import ReactMarkdown from 'react-markdown';
 import {
@@ -52,6 +52,10 @@ export default function SupportPage() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  const handleClearChat = () => {
+    setMessages([]);
+  };
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -115,8 +119,24 @@ export default function SupportPage() {
           <TabsTrigger value="faq">Preguntas Frecuentes</TabsTrigger>
         </TabsList>
         <TabsContent value="assistant">
-          <Card className="h-[70vh]">
-            <CardContent className="h-full flex flex-col p-4">
+          <Card className="flex flex-col h-[70vh]">
+            <CardHeader className="pb-2 flex-shrink-0">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg">Asistente Virtual MewBot</CardTitle>
+                {messages.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearChat}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Limpiar chat
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col p-4 min-h-0">
               <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
                 <div className="space-y-6">
                   {messages.map((message, index) => (
@@ -153,7 +173,7 @@ export default function SupportPage() {
                      <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                         <Bot className="h-12 w-12 mb-4" />
                         <h2 className="text-xl font-semibold">Bienvenido al Asistente Virtual</h2>
-                        <p className="mt-2">Soy MewBot, ¿cómo puedo ayudarte hoy?</p>
+                        <p className="mt-2">Soy MewBot, especializado en temas de negocio y empresa. ¿En qué puedo ayudarte?</p>
                      </div>
                    )}
                 </div>
@@ -165,7 +185,7 @@ export default function SupportPage() {
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Pregunta sobre nuestros servicios..."
+                  placeholder="Pregunta sobre nuestro negocio, servicios u operaciones..."
                   className="flex-1"
                   disabled={isLoading}
                 />
