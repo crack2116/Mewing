@@ -15,9 +15,10 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useState, useEffect } from 'react';
 import { getProfileImageUrl } from '@/lib/profile-image';
+import { useUserRole } from '@/hooks/use-user-role';
 
-
-const navItems = [
+// Items de navegación para admin
+const adminNavItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
   { href: '/services', icon: ClipboardList, label: 'Servicios' },
   { href: '/management', icon: Users, label: 'Gestión' },
@@ -27,11 +28,20 @@ const navItems = [
   { href: '/support', icon: LifeBuoy, label: 'Soporte' },
 ];
 
+// Items de navegación para asistente (sin Gestión, Reportes y Rutas)
+const assistantNavItems = [
+  { href: '/', icon: Home, label: 'Dashboard' },
+  { href: '/services', icon: ClipboardList, label: 'Servicios' },
+  { href: '/tracking', icon: Map, label: 'Seguimiento' },
+  { href: '/support', icon: LifeBuoy, label: 'Soporte' },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState('Usuario');
   const [userEmail, setUserEmail] = useState('e@gmail.com');
+  const { isAdmin, isAssistant, loading: roleLoading } = useUserRole();
 
   // Obtener imagen de perfil desde Firebase Storage
   useEffect(() => {
@@ -43,6 +53,9 @@ export default function Sidebar() {
     };
     loadProfileImage();
   }, []);
+
+  // Determinar qué items mostrar según el rol
+  const navItems = roleLoading ? [] : (isAdmin ? adminNavItems : assistantNavItems);
 
   return (
     <aside className="hidden h-screen w-64 flex-col border-r bg-card sm:flex overflow-hidden">

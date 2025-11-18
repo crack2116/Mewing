@@ -50,6 +50,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { useUserRole } from '@/hooks/use-user-role';
 
 // Tipos para los datos de Firestore
 interface Client {
@@ -118,6 +119,7 @@ export default function ManagementPage() {
   const [error, setError] = useState<string | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const { isAdmin, isAssistant } = useUserRole();
   
   // Estado para el tab activo (default desde query params o 'clients')
   const [activeTab, setActiveTab] = useState<string>('clients');
@@ -126,9 +128,14 @@ export default function ManagementPage() {
   useEffect(() => {
     const tab = searchParams.get('tab');
     if (tab && ['clients', 'drivers', 'vehicles', 'users'].includes(tab)) {
-      setActiveTab(tab);
+      // Si es asistente y trata de acceder a usuarios, redirigir a clients
+      if (tab === 'users' && !isAdmin) {
+        setActiveTab('clients');
+      } else {
+        setActiveTab(tab);
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, isAdmin]);
   
   // Estados para paginación de clientes
   const [currentPage, setCurrentPage] = useState(1);
@@ -1438,10 +1445,12 @@ service cloud.firestore {
             <Truck className="mr-2 h-4 w-4" />
             Vehículos
           </TabsTrigger>
-          <TabsTrigger value="users">
-            <UsersIcon className="mr-2 h-4 w-4" />
-            Usuarios
-          </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="users">
+              <UsersIcon className="mr-2 h-4 w-4" />
+              Usuarios
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="clients" className="mt-4">
@@ -1770,7 +1779,9 @@ service cloud.firestore {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => handleEditClient(client)}>Editar</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setDeletingClientId(client.id)} className="text-destructive">Eliminar</DropdownMenuItem>
+                              {isAdmin && (
+                                <DropdownMenuItem onClick={() => setDeletingClientId(client.id)} className="text-destructive">Eliminar</DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -2179,7 +2190,9 @@ service cloud.firestore {
                           <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleEditDriver(driver)}>Editar</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setDeletingDriverId(driver.id)} className="text-destructive">Eliminar</DropdownMenuItem>
+                            {isAdmin && (
+                              <DropdownMenuItem onClick={() => setDeletingDriverId(driver.id)} className="text-destructive">Eliminar</DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -2632,7 +2645,9 @@ Código: ${errorCode || 'N/A'}`;
                           <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleEditVehicle(vehicle)}>Editar</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setDeletingVehicleId(vehicle.id)} className="text-destructive">Eliminar</DropdownMenuItem>
+                            {isAdmin && (
+                              <DropdownMenuItem onClick={() => setDeletingVehicleId(vehicle.id)} className="text-destructive">Eliminar</DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
