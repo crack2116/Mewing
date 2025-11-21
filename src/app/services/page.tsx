@@ -91,6 +91,31 @@ export default function ServicesPage() {
   const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [loadingVehicles, setLoadingVehicles] = useState(false);
   
+  // Función para obtener el nombre del conductor por ID
+  const getDriverName = (driverId?: string): string => {
+    if (!driverId || driverId === 'N/A') return 'No asignado';
+    const driver = drivers.find(d => d.id === driverId);
+    if (driver) {
+      if (driver.firstName && driver.lastName) {
+        return `${driver.firstName} ${driver.lastName}`;
+      }
+      if (driver.name) {
+        return driver.name;
+      }
+    }
+    return driverId; // Si no se encuentra, mostrar el ID
+  };
+  
+  // Función para obtener la placa del vehículo por ID
+  const getVehiclePlate = (vehicleId?: string): string => {
+    if (!vehicleId || vehicleId === 'N/A') return 'No asignado';
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if (vehicle) {
+      return vehicle.licensePlate || vehicle.id;
+    }
+    return vehicleId; // Si no se encuentra, mostrar el ID
+  };
+  
   // Formulario para crear nueva solicitud
   const [createForm, setCreateForm] = useState({
     clientId: '',
@@ -308,6 +333,11 @@ export default function ServicesPage() {
       setLoadingVehicles(false);
     }
   };
+  
+  // Cargar conductores y vehículos al montar el componente
+  useEffect(() => {
+    loadDriversAndVehicles();
+  }, []);
 
   // Asignar conductor y vehículo
   const handleAssignDriver = async (driverId: string, vehicleId: string) => {
@@ -631,8 +661,27 @@ export default function ServicesPage() {
                         {formatStatus(request.status)}
                       </Badge>
                     </TableCell>
-                    <TableCell>{request.driverId}</TableCell>
-                    <TableCell>{request.vehicleId}</TableCell>
+                    <TableCell>
+                      {request.status === 'Asignado' && request.driverId && request.driverId !== 'N/A' ? (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="warning" className="font-semibold">Asignado</Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {getDriverName(request.driverId)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">No asignado</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {request.status === 'Asignado' && request.vehicleId && request.vehicleId !== 'N/A' ? (
+                        <span className="text-sm">
+                          {getVehiclePlate(request.vehicleId)}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">No asignado</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
