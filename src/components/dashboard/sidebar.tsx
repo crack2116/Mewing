@@ -16,6 +16,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useState, useEffect } from 'react';
 import { getProfileImageUrl } from '@/lib/profile-image';
 import { useUserRole } from '@/hooks/use-user-role';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '@/app/management/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 // Items de navegación para admin
 const adminNavItems = [
@@ -43,7 +46,7 @@ export default function Sidebar() {
   const [userEmail, setUserEmail] = useState('e@gmail.com');
   const { isAdmin, isAssistant, loading: roleLoading } = useUserRole();
 
-  // Obtener imagen de perfil desde Firebase Storage
+  // Obtener imagen de perfil y datos del usuario
   useEffect(() => {
     const loadProfileImage = async () => {
       const url = await getProfileImageUrl();
@@ -52,6 +55,37 @@ export default function Sidebar() {
       }
     };
     loadProfileImage();
+
+    // Obtener datos del usuario autenticado
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Establecer valores por defecto desde Firebase Auth
+        setUserName(user.displayName || 'Usuario');
+        setUserEmail(user.email || 'e@gmail.com');
+
+        // Intentar obtener datos adicionales de Firestore
+        if (user.email) {
+          try {
+            const usersQuery = query(
+              collection(db, 'users'),
+              where('email', '==', user.email)
+            );
+            const usersSnapshot = await getDocs(usersQuery);
+            
+            if (!usersSnapshot.empty) {
+              const userData = usersSnapshot.docs[0].data();
+              setUserName(userData.nombresCompletos || userData.nombres || user.displayName || 'Usuario');
+              setUserEmail(userData.email || user.email || 'e@gmail.com');
+            }
+          } catch (error) {
+            console.error('Error loading user data in sidebar:', error);
+            // Mantener valores de Firebase Auth si hay error
+          }
+        }
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   // Determinar qué items mostrar según el rol

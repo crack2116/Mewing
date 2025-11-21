@@ -44,7 +44,7 @@ import { getProfileImageUrl } from '@/lib/profile-image';
 import { auth, storage, db } from '@/app/management/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { onAuthStateChanged, updateProfile, updatePassword, updateEmail, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserProfile {
@@ -124,19 +124,51 @@ export default function ProfilePage() {
         });
         
         // Cargar datos adicionales de Firestore si existen
+        // Buscar por email ya que los documentos tienen IDs automáticos
         try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
+          if (user.email) {
+            // Intentar buscar por email en la colección users
+            const usersQuery = query(
+              collection(db, 'users'),
+              where('email', '==', user.email)
+            );
+            const usersSnapshot = await getDocs(usersQuery);
+            
+            if (!usersSnapshot.empty) {
+              const data = usersSnapshot.docs[0].data();
+              setUserProfile(prev => ({
+                ...prev,
+                displayName: data.nombresCompletos || data.nombres || user.displayName || 'Usuario',
+                email: data.email || user.email || 'e@gmail.com',
+                phone: data.phone || data.contactPhone || user.phoneNumber || 'No especificado',
+              }));
+            } else {
+              // Si no se encuentra en users, usar datos de Firebase Auth
+              setUserProfile(prev => ({
+                ...prev,
+                displayName: user.displayName || 'Usuario',
+                email: user.email || 'e@gmail.com',
+                phone: user.phoneNumber || 'No especificado',
+              }));
+            }
+          } else {
+            // Si no hay email, usar datos de Firebase Auth
             setUserProfile(prev => ({
               ...prev,
-              displayName: data.nombresCompletos || data.nombres || user.displayName || 'Usuario',
-              email: data.email || user.email || 'e@gmail.com',
-              phone: data.phone || data.contactPhone || user.phoneNumber || 'No especificado',
+              displayName: user.displayName || 'Usuario',
+              email: 'e@gmail.com',
+              phone: user.phoneNumber || 'No especificado',
             }));
           }
         } catch (error) {
           console.error('Error loading user profile:', error);
+          // En caso de error, usar datos de Firebase Auth
+          setUserProfile(prev => ({
+            ...prev,
+            displayName: user.displayName || 'Usuario',
+            email: user.email || 'e@gmail.com',
+            phone: user.phoneNumber || 'No especificado',
+          }));
         }
         
         // Cargar imagen de perfil
