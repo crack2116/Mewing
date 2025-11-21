@@ -233,6 +233,60 @@ export default function ServicesPage() {
     }
   }
 
+  // Función para generar el siguiente ID de solicitud (S0001, S0002, etc.)
+  const generateNextServiceRequestId = async (): Promise<string> => {
+    try {
+      const requestsSnapshot = await getDocs(collection(db, 'serviceRequests'));
+      
+      // Extraer todos los códigos de ID que siguen el formato S0000
+      const requestIds: number[] = [];
+      
+      requestsSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        // Buscar el campo 'id' que tenga formato S####
+        const requestId = data.id;
+        if (requestId && typeof requestId === 'string' && requestId.startsWith('S')) {
+          // Extraer el número después de 'S'
+          const numberStr = requestId.substring(1);
+          const number = parseInt(numberStr, 10);
+          if (!isNaN(number)) {
+            requestIds.push(number);
+          }
+        }
+      });
+      
+      // Encontrar el número más alto
+      const maxNumber = requestIds.length > 0 ? Math.max(...requestIds) : -1;
+      
+      // Generar el siguiente código (incrementar en 1)
+      const nextNumber = maxNumber + 1;
+      
+      // Formatear con ceros a la izquierda (S0000, S0001, etc.)
+      const nextId = `S${nextNumber.toString().padStart(4, '0')}`;
+      
+      return nextId;
+    } catch (error) {
+      console.error('Error generando código de solicitud:', error);
+      // Si hay error, usar un código por defecto basado en timestamp
+      const timestamp = Date.now();
+      const fallbackId = `S${(timestamp % 10000).toString().padStart(4, '0')}`;
+      return fallbackId;
+    }
+  };
+
+  // Función para formatear el ID para mostrar
+  const formatRequestId = (id: string): string => {
+    // Si ya tiene formato S####, mostrarlo tal cual
+    if (id && typeof id === 'string' && id.startsWith('S') && id.length <= 5) {
+      return id;
+    }
+    // Si es un ID largo de Firestore, mostrar solo los primeros 8 caracteres
+    if (id && id.length > 8) {
+      return id.substring(0, 8) + '...';
+    }
+    return id;
+  };
+
   // Crear nueva solicitud
   const handleCreateRequest = async () => {
     if (!createForm.clientId || !createForm.pickupLocation || !createForm.destination || !createForm.serviceDate || !createForm.price) {
@@ -255,7 +309,11 @@ export default function ServicesPage() {
 
     setSavingRequest(true);
     try {
+      // Generar el siguiente ID de solicitud
+      const serviceRequestId = await generateNextServiceRequestId();
+      
       const serviceData = {
+        id: serviceRequestId, // ID personalizado en formato S0001, S0002, etc.
         clientId: createForm.clientId.trim(),
         pickupLocation: createForm.pickupLocation.trim(),
         destination: createForm.destination.trim(),
@@ -679,7 +737,7 @@ export default function ServicesPage() {
               ) : (
                 serviceRequests.map((request, index) => (
                   <TableRow key={request.id || `request-${index}`}>
-                    <TableCell className="font-medium">{request.id}</TableCell>
+                    <TableCell className="font-medium">{formatRequestId(request.id)}</TableCell>
                     <TableCell>{request.clientId}</TableCell>
                     <TableCell>
                       <div className="max-w-xs truncate" title={request.pickupLocation}>
