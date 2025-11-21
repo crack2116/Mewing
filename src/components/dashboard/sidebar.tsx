@@ -7,7 +7,6 @@ import {
   Map,
   Home,
   LifeBuoy,
-  Route
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -27,7 +26,6 @@ const adminNavItems = [
   { href: '/management', icon: Users, label: 'Gestión' },
   { href: '/tracking', icon: Map, label: 'Seguimiento' },
   { href: '/reports', icon: LineChart, label: 'Reportes' },
-  { href: '/routes', icon: Route, label: 'Rutas' },
   { href: '/support', icon: LifeBuoy, label: 'Soporte' },
 ];
 
