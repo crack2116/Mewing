@@ -1574,86 +1574,90 @@ service cloud.firestore {
                   </Button>
                   <Button
                     onClick={async () => {
-                      if (!clientForm.ruc || !clientForm.name) {
-                        toast({
-                          title: "Error",
-                          description: "Por favor completa los campos obligatorios (RUC, Nombre)",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      
-                      // Verificar que el usuario esté autenticado
-                      if (!firebaseUser) {
-                        toast({
-                          title: "Error de autenticación",
-                          description: "No estás autenticado. Por favor, recarga la página.",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      
-                      setSavingClient(true);
-                      try {
-                        // Verificar que db esté inicializado
-                        if (!db) {
-                          throw new Error('Firestore no está inicializado');
+                      if (editingClient) {
+                        await handleUpdateClient();
+                      } else {
+                        if (!clientForm.ruc || !clientForm.name) {
+                          toast({
+                            title: "Error",
+                            description: "Por favor completa los campos obligatorios (RUC, Nombre)",
+                            variant: "destructive",
+                          });
+                          return;
                         }
                         
-                        const clientData = {
-                          ruc: clientForm.ruc.trim(),
-                          name: clientForm.name.trim(),
-                          contactName: clientForm.contactName.trim() || undefined,
-                          contactEmail: clientForm.contactEmail.trim() || undefined,
-                          address: clientForm.address.trim() || undefined,
-                          fechaRegistro: new Date().toISOString(),
-                        };
-                        
-                        console.log('Datos del cliente a guardar:', clientData);
-                        
-                        // Add client to Firestore
-                        await addDoc(collection(db, 'clients'), clientData);
-                        
-                        toast({
-                          title: "Cliente creado",
-                          description: `El cliente ${clientForm.name} ha sido registrado exitosamente.`,
-                        });
-                        
-                        // Reset form and close dialog
-                        setClientForm({
-                          ruc: '',
-                          name: '',
-                          contactName: '',
-                          contactEmail: '',
-                          address: '',
-                        });
-                        setClientDialogOpen(false);
-                        
-                        // Refresh clients list
-                        const clientsSnapshot = await getDocs(collection(db, 'clients'));
-                        const clientsData = clientsSnapshot.docs.map(doc => {
-                          const data = doc.data();
-                          return { ...data, id: doc.id } as Client;
-                        });
-                        const uniqueClients = clientsData.filter((client, index, self) => 
-                          index === self.findIndex((c) => c.id === client.id)
-                        );
-                        setClients(uniqueClients);
-                      } catch (error: any) {
-                        console.error('Error creating client:', error);
-                        let errorMessage = error.message || 'Error desconocido';
-                        
-                        if (error.code === 'permission-denied') {
-                          errorMessage = 'No tienes permisos para crear clientes. Verifica las reglas de Firestore.';
+                        // Verificar que el usuario esté autenticado
+                        if (!firebaseUser) {
+                          toast({
+                            title: "Error de autenticación",
+                            description: "No estás autenticado. Por favor, recarga la página.",
+                            variant: "destructive",
+                          });
+                          return;
                         }
                         
-                        toast({
-                          title: "Error",
-                          description: `No se pudo crear el cliente: ${errorMessage}`,
-                          variant: "destructive",
-                        });
-                      } finally {
-                        setSavingClient(false);
+                        setSavingClient(true);
+                        try {
+                          // Verificar que db esté inicializado
+                          if (!db) {
+                            throw new Error('Firestore no está inicializado');
+                          }
+                          
+                          const clientData = {
+                            ruc: clientForm.ruc.trim(),
+                            name: clientForm.name.trim(),
+                            contactName: clientForm.contactName.trim() || undefined,
+                            contactEmail: clientForm.contactEmail.trim() || undefined,
+                            address: clientForm.address.trim() || undefined,
+                            fechaRegistro: new Date().toISOString(),
+                          };
+                          
+                          console.log('Datos del cliente a guardar:', clientData);
+                          
+                          // Add client to Firestore
+                          await addDoc(collection(db, 'clients'), clientData);
+                          
+                          toast({
+                            title: "Cliente creado",
+                            description: `El cliente ${clientForm.name} ha sido registrado exitosamente.`,
+                          });
+                          
+                          // Reset form and close dialog
+                          setClientForm({
+                            ruc: '',
+                            name: '',
+                            contactName: '',
+                            contactEmail: '',
+                            address: '',
+                          });
+                          setClientDialogOpen(false);
+                          
+                          // Refresh clients list
+                          const clientsSnapshot = await getDocs(collection(db, 'clients'));
+                          const clientsData = clientsSnapshot.docs.map(doc => {
+                            const data = doc.data();
+                            return { ...data, id: doc.id } as Client;
+                          });
+                          const uniqueClients = clientsData.filter((client, index, self) => 
+                            index === self.findIndex((c) => c.id === client.id)
+                          );
+                          setClients(uniqueClients);
+                        } catch (error: any) {
+                          console.error('Error creating client:', error);
+                          let errorMessage = error.message || 'Error desconocido';
+                          
+                          if (error.code === 'permission-denied') {
+                            errorMessage = 'No tienes permisos para crear clientes. Verifica las reglas de Firestore.';
+                          }
+                          
+                          toast({
+                            title: "Error",
+                            description: `No se pudo crear el cliente: ${errorMessage}`,
+                            variant: "destructive",
+                          });
+                        } finally {
+                          setSavingClient(false);
+                        }
                       }
                     }}
                     disabled={savingClient}
@@ -1661,10 +1665,10 @@ service cloud.firestore {
                     {savingClient ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Guardando...
+                        {editingClient ? 'Actualizando...' : 'Guardando...'}
                       </>
                     ) : (
-                      'Guardar Cliente'
+                      editingClient ? 'Actualizar Cliente' : 'Guardar Cliente'
                     )}
                   </Button>
                 </DialogFooter>
