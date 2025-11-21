@@ -2026,96 +2026,100 @@ service cloud.firestore {
                   </Button>
                   <Button
                     onClick={async () => {
-                      if (!driverForm.dni || !driverForm.nombres || !driverForm.apellidos || !driverForm.licenseNumber) {
-                        toast({
-                          title: "Error",
-                          description: "Por favor completa todos los campos obligatorios (DNI, Nombres, Apellidos, Número de Licencia)",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      
-                      // Verificar que el usuario esté autenticado
-                      if (!firebaseUser) {
-                        toast({
-                          title: "Error de autenticación",
-                          description: "No estás autenticado. Por favor, recarga la página.",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      
-                      setSavingDriver(true);
-                      try {
-                        // Generar el siguiente código de ID automáticamente
-                        const driverCode = await generateNextDriverId();
-                        
-                        // Separar apellidos en paterno y materno
-                        const apellidosParts = driverForm.apellidos.trim().split(' ');
-                        const apellidoPaterno = apellidosParts[0] || '';
-                        const apellidoMaterno = apellidosParts.slice(1).join(' ') || '';
-                        
-                        const driverData = {
-                          id: driverCode, // Código generado automáticamente (C0000, C0001, etc.)
-                          dni: driverForm.dni,
-                          firstName: driverForm.nombres.trim(),
-                          lastName: driverForm.apellidos.trim(),
-                          apellidoPaterno: apellidoPaterno,
-                          apellidoMaterno: apellidoMaterno,
-                          licenseNumber: driverForm.licenseNumber.trim(),
-                          contactPhone: driverForm.contactPhone.trim(),
-                          licenseStatus: 'Activa',
-                          fechaRegistro: new Date().toISOString(),
-                        };
-                        
-                        console.log('Creando conductor con código:', driverCode);
-                        
-                        // Add driver to Firestore
-                        await addDoc(collection(db, 'drivers'), driverData);
-                        
-                        toast({
-                          title: "Conductor creado",
-                          description: `El conductor ${driverForm.nombres} ${driverForm.apellidos} ha sido registrado exitosamente con código ${driverCode}.`,
-                        });
-                        
-                        // Reset form and close dialog
-                        setDriverForm({
-                          dni: '',
-                          nombres: '',
-                          apellidos: '',
-                          licenseNumber: '',
-                          contactPhone: '',
-                        });
-                        setDriverDialogOpen(false);
-                        
-                        // Refresh drivers list
-                        const driversSnapshot = await getDocs(collection(db, 'drivers'));
-                        const driversData = driversSnapshot.docs.map(doc => {
-                          const data = doc.data();
-                          return { ...data, id: doc.id } as Driver;
-                        });
-                        const uniqueDrivers = driversData.filter((driver, index, self) => 
-                          index === self.findIndex((d) => d.id === driver.id)
-                        );
-                        setDrivers(uniqueDrivers);
-                      } catch (error: any) {
-                        console.error('Error creating driver:', error);
-                        let errorMessage = error.message || 'Error desconocido';
-                        
-                        // Mejorar mensaje de error para permisos
-                        if (error.code === 'permission-denied') {
-                          errorMessage = 'No tienes permisos para crear conductores. Verifica las reglas de Firestore o contacta al administrador.';
-                        } else if (error.message?.includes('permission')) {
-                          errorMessage = 'Error de permisos. Verifica que estés autenticado correctamente.';
+                      if (editingDriver) {
+                        await handleUpdateDriver();
+                      } else {
+                        if (!driverForm.dni || !driverForm.nombres || !driverForm.apellidos || !driverForm.licenseNumber) {
+                          toast({
+                            title: "Error",
+                            description: "Por favor completa todos los campos obligatorios (DNI, Nombres, Apellidos, Número de Licencia)",
+                            variant: "destructive",
+                          });
+                          return;
                         }
                         
-                        toast({
-                          title: "Error",
-                          description: `No se pudo crear el conductor: ${errorMessage}`,
-                          variant: "destructive",
-                        });
-                      } finally {
-                        setSavingDriver(false);
+                        // Verificar que el usuario esté autenticado
+                        if (!firebaseUser) {
+                          toast({
+                            title: "Error de autenticación",
+                            description: "No estás autenticado. Por favor, recarga la página.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        
+                        setSavingDriver(true);
+                        try {
+                          // Generar el siguiente código de ID automáticamente
+                          const driverCode = await generateNextDriverId();
+                          
+                          // Separar apellidos en paterno y materno
+                          const apellidosParts = driverForm.apellidos.trim().split(' ');
+                          const apellidoPaterno = apellidosParts[0] || '';
+                          const apellidoMaterno = apellidosParts.slice(1).join(' ') || '';
+                          
+                          const driverData = {
+                            id: driverCode, // Código generado automáticamente (C0000, C0001, etc.)
+                            dni: driverForm.dni,
+                            firstName: driverForm.nombres.trim(),
+                            lastName: driverForm.apellidos.trim(),
+                            apellidoPaterno: apellidoPaterno,
+                            apellidoMaterno: apellidoMaterno,
+                            licenseNumber: driverForm.licenseNumber.trim(),
+                            contactPhone: driverForm.contactPhone.trim(),
+                            licenseStatus: 'Activa',
+                            fechaRegistro: new Date().toISOString(),
+                          };
+                          
+                          console.log('Creando conductor con código:', driverCode);
+                          
+                          // Add driver to Firestore
+                          await addDoc(collection(db, 'drivers'), driverData);
+                          
+                          toast({
+                            title: "Conductor creado",
+                            description: `El conductor ${driverForm.nombres} ${driverForm.apellidos} ha sido registrado exitosamente con código ${driverCode}.`,
+                          });
+                          
+                          // Reset form and close dialog
+                          setDriverForm({
+                            dni: '',
+                            nombres: '',
+                            apellidos: '',
+                            licenseNumber: '',
+                            contactPhone: '',
+                          });
+                          setDriverDialogOpen(false);
+                          
+                          // Refresh drivers list
+                          const driversSnapshot = await getDocs(collection(db, 'drivers'));
+                          const driversData = driversSnapshot.docs.map(doc => {
+                            const data = doc.data();
+                            return { ...data, id: doc.id } as Driver;
+                          });
+                          const uniqueDrivers = driversData.filter((driver, index, self) => 
+                            index === self.findIndex((d) => d.id === driver.id)
+                          );
+                          setDrivers(uniqueDrivers);
+                        } catch (error: any) {
+                          console.error('Error creating driver:', error);
+                          let errorMessage = error.message || 'Error desconocido';
+                          
+                          // Mejorar mensaje de error para permisos
+                          if (error.code === 'permission-denied') {
+                            errorMessage = 'No tienes permisos para crear conductores. Verifica las reglas de Firestore o contacta al administrador.';
+                          } else if (error.message?.includes('permission')) {
+                            errorMessage = 'Error de permisos. Verifica que estés autenticado correctamente.';
+                          }
+                          
+                          toast({
+                            title: "Error",
+                            description: `No se pudo crear el conductor: ${errorMessage}`,
+                            variant: "destructive",
+                          });
+                        } finally {
+                          setSavingDriver(false);
+                        }
                       }
                     }}
                     disabled={savingDriver}
@@ -2123,10 +2127,10 @@ service cloud.firestore {
                     {savingDriver ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Guardando...
+                        {editingDriver ? 'Actualizando...' : 'Guardando...'}
                       </>
                     ) : (
-                      'Guardar Conductor'
+                      editingDriver ? 'Actualizar Conductor' : 'Guardar Conductor'
                     )}
                   </Button>
                 </DialogFooter>
