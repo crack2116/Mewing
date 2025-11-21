@@ -15,11 +15,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { db, auth } from "@/app/management/firebase";
-import { collection, onSnapshot, doc, updateDoc, getDocs, query, where, addDoc, Timestamp } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc, getDocs, query, where, addDoc, deleteDoc, Timestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
-import { PlusCircle, MoreHorizontal, UserPlus, Pencil, Copy, XCircle, Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { PlusCircle, MoreHorizontal, UserPlus, Pencil, Copy, XCircle, Trash2, Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,6 +85,7 @@ export default function ServicesPage() {
   const [assignDriverOpen, setAssignDriverOpen] = useState(false);
   const [editRequestOpen, setEditRequestOpen] = useState(false);
   const [cancelRequestOpen, setCancelRequestOpen] = useState(false);
+  const [deleteRequestOpen, setDeleteRequestOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -469,6 +470,44 @@ export default function ServicesPage() {
     }
   };
 
+  // Eliminar solicitud
+  const handleDeleteRequest = async () => {
+    if (!selectedRequest) return;
+
+    try {
+      const requestsSnapshot = await getDocs(collection(db, 'serviceRequests'));
+      let requestDoc = null;
+      
+      for (const docSnap of requestsSnapshot.docs) {
+        const data = docSnap.data();
+        if (data.id === selectedRequest.id || docSnap.id === selectedRequest.id) {
+          requestDoc = docSnap;
+          break;
+        }
+      }
+
+      if (!requestDoc) {
+        throw new Error('Solicitud no encontrada');
+      }
+
+      await deleteDoc(doc(db, 'serviceRequests', requestDoc.id));
+
+      toast({
+        title: "Solicitud eliminada",
+        description: "La solicitud ha sido eliminada exitosamente.",
+      });
+      setDeleteRequestOpen(false);
+      setSelectedRequest(null);
+    } catch (error: any) {
+      console.error('Error deleting request:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo eliminar la solicitud",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -758,6 +797,16 @@ export default function ServicesPage() {
                             <XCircle className="mr-2 h-4 w-4" />
                             Cancelar
                           </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-red-500"
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setDeleteRequestOpen(true);
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -953,6 +1002,27 @@ export default function ServicesPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Sí, cancelar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal Eliminar */}
+      <AlertDialog open={deleteRequestOpen} onOpenChange={setDeleteRequestOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará permanentemente la solicitud {selectedRequest?.id}. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, mantener</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteRequest}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Sí, eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
