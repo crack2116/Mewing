@@ -66,16 +66,62 @@ export default function Sidebar() {
         // Intentar obtener datos adicionales de Firestore
         if (user.email) {
           try {
-            const usersQuery = query(
+            // Buscar por email primero
+            let usersQuery = query(
               collection(db, 'users'),
               where('email', '==', user.email)
             );
-            const usersSnapshot = await getDocs(usersQuery);
+            let usersSnapshot = await getDocs(usersQuery);
+            
+            // Si no se encuentra, buscar por username
+            if (usersSnapshot.empty) {
+              usersQuery = query(
+                collection(db, 'users'),
+                where('username', '==', user.email)
+              );
+              usersSnapshot = await getDocs(usersQuery);
+            }
+            
+            // Si aún no se encuentra, buscar manualmente
+            if (usersSnapshot.empty) {
+              const allUsersSnapshot = await getDocs(collection(db, 'users'));
+              const userEmailNormalized = user.email.trim().toLowerCase();
+              const matchingUser = allUsersSnapshot.docs.find(doc => {
+                const data = doc.data();
+                const docEmail = data.email || data.username;
+                if (!docEmail) return false;
+                return docEmail.trim().toLowerCase() === userEmailNormalized;
+              });
+              
+              if (matchingUser) {
+                usersSnapshot = {
+                  empty: false,
+                  docs: [matchingUser]
+                } as any;
+              }
+            }
             
             if (!usersSnapshot.empty) {
               const userData = usersSnapshot.docs[0].data();
-              setUserName(userData.nombresCompletos || userData.nombres || user.displayName || 'Usuario');
-              setUserEmail(userData.email || user.email || 'e@gmail.com');
+              
+              // Construir nombre completo con nombres y apellidos
+              let nombreCompleto = '';
+              if (userData.nombresCompletos) {
+                nombreCompleto = userData.nombresCompletos;
+              } else if (userData.nombres && (userData.apellidoPaterno || userData.apellidoMaterno)) {
+                // Construir desde nombres y apellidos
+                const apellidos = [userData.apellidoPaterno, userData.apellidoMaterno].filter(Boolean).join(' ');
+                nombreCompleto = `${userData.nombres} ${apellidos}`.trim();
+              } else if (userData.nombres) {
+                nombreCompleto = userData.nombres;
+              } else if (user.displayName) {
+                nombreCompleto = user.displayName;
+              } else {
+                nombreCompleto = 'Usuario';
+              }
+              
+              setUserName(nombreCompleto);
+              setUserEmail(userData.email || userData.username || user.email || 'e@gmail.com');
             }
           } catch (error) {
             console.error('Error loading user data in sidebar:', error);

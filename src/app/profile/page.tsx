@@ -27,6 +27,8 @@ import {
   Settings,
   Loader2,
   X,
+  User,
+  Hash,
 } from 'lucide-react';
 import {
   Dialog,
@@ -53,6 +55,9 @@ interface UserProfile {
   phone?: string;
   location?: string;
   registrationDate?: string;
+  dni?: string;
+  direccion?: string;
+  edad?: number;
 }
 
 export default function ProfilePage() {
@@ -69,6 +74,9 @@ export default function ProfilePage() {
     phone: 'No especificado',
     location: 'Piura, Perú',
     registrationDate: '10/10/2025',
+    dni: 'No especificado',
+    direccion: 'No especificado',
+    edad: undefined,
   });
   const [currentUser, setCurrentUser] = useState<any>(null);
   
@@ -121,28 +129,118 @@ export default function ProfilePage() {
           registrationDate: user.metadata.creationTime 
             ? new Date(user.metadata.creationTime).toLocaleDateString('es-PE')
             : '10/10/2025',
+          dni: 'No especificado',
+          direccion: 'No especificado',
+          edad: undefined,
         });
         
         // Cargar datos adicionales de Firestore si existen
         // Buscar por email ya que los documentos tienen IDs automáticos
         try {
           if (user.email) {
+            console.log('🔍 [Profile] Buscando usuario con email:', user.email);
+            
             // Intentar buscar por email en la colección users
-            const usersQuery = query(
+            let usersQuery = query(
               collection(db, 'users'),
               where('email', '==', user.email)
             );
-            const usersSnapshot = await getDocs(usersQuery);
+            let usersSnapshot = await getDocs(usersQuery);
+            
+            // Si no se encuentra, buscar por username (algunos documentos usan username en lugar de email)
+            if (usersSnapshot.empty) {
+              console.log('🔍 [Profile] No encontrado por email, buscando por username');
+              usersQuery = query(
+                collection(db, 'users'),
+                where('username', '==', user.email)
+              );
+              usersSnapshot = await getDocs(usersQuery);
+            }
+            
+            // Si no se encuentra, intentar con email normalizado
+            if (usersSnapshot.empty) {
+              const normalizedEmail = user.email.trim().toLowerCase();
+              console.log('🔍 [Profile] No encontrado, intentando con email normalizado:', normalizedEmail);
+              usersQuery = query(
+                collection(db, 'users'),
+                where('email', '==', normalizedEmail)
+              );
+              usersSnapshot = await getDocs(usersQuery);
+              
+              if (usersSnapshot.empty) {
+                usersQuery = query(
+                  collection(db, 'users'),
+                  where('username', '==', normalizedEmail)
+                );
+                usersSnapshot = await getDocs(usersQuery);
+              }
+            }
+            
+            // Si aún no se encuentra, buscar manualmente en todos los usuarios
+            if (usersSnapshot.empty) {
+              console.log('🔍 [Profile] No encontrado con query, buscando manualmente');
+              const allUsersSnapshot = await getDocs(collection(db, 'users'));
+              const userEmailNormalized = user.email.trim().toLowerCase();
+              const matchingUser = allUsersSnapshot.docs.find(doc => {
+                const data = doc.data();
+                const docEmail = data.email || data.username;
+                if (!docEmail) return false;
+                return docEmail.trim().toLowerCase() === userEmailNormalized;
+              });
+              
+              if (matchingUser) {
+                console.log('✅ [Profile] Usuario encontrado mediante búsqueda manual');
+                usersSnapshot = {
+                  empty: false,
+                  docs: [matchingUser]
+                } as any;
+              }
+            }
             
             if (!usersSnapshot.empty) {
               const data = usersSnapshot.docs[0].data();
+              console.log('✅ [Profile] Datos del usuario encontrado:', {
+                email: data.email,
+                nombres: data.nombres,
+                apellidoPaterno: data.apellidoPaterno,
+                apellidoMaterno: data.apellidoMaterno,
+                nombresCompletos: data.nombresCompletos,
+                fullData: data
+              });
+              
+              // Construir nombre completo con nombres y apellidos
+              let nombreCompleto = '';
+              if (data.nombresCompletos) {
+                nombreCompleto = data.nombresCompletos;
+                console.log('✅ [Profile] Usando nombresCompletos:', nombreCompleto);
+              } else if (data.nombres && (data.apellidoPaterno || data.apellidoMaterno)) {
+                // Construir desde nombres y apellidos
+                const apellidos = [data.apellidoPaterno, data.apellidoMaterno].filter(Boolean).join(' ');
+                nombreCompleto = `${data.nombres} ${apellidos}`.trim();
+                console.log('✅ [Profile] Construido desde nombres y apellidos:', nombreCompleto);
+              } else if (data.nombres) {
+                nombreCompleto = data.nombres;
+                console.log('✅ [Profile] Usando solo nombres:', nombreCompleto);
+              } else if (user.displayName) {
+                nombreCompleto = user.displayName;
+                console.log('✅ [Profile] Usando displayName de Firebase Auth:', nombreCompleto);
+              } else {
+                nombreCompleto = 'Usuario';
+                console.log('⚠️ [Profile] No se encontraron nombres, usando default');
+              }
+              
               setUserProfile(prev => ({
                 ...prev,
-                displayName: data.nombresCompletos || data.nombres || user.displayName || 'Usuario',
-                email: data.email || user.email || 'e@gmail.com',
+                displayName: nombreCompleto,
+                email: data.email || data.username || user.email || 'e@gmail.com',
                 phone: data.phone || data.contactPhone || user.phoneNumber || 'No especificado',
+                dni: data.dni || 'No especificado',
+                direccion: data.direccion || 'No especificado',
+                edad: data.edad || undefined,
+                location: data.direccion || prev.location || 'Piura, Perú',
               }));
             } else {
+              console.log('⚠️ [Profile] Usuario no encontrado en Firestore, usando datos de Firebase Auth');
               // Si no se encuentra en users, usar datos de Firebase Auth
               setUserProfile(prev => ({
                 ...prev,
@@ -598,6 +696,13 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div className="flex items-start gap-4">
+                <Hash className="h-6 w-6 text-muted-foreground mt-1" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">DNI</p>
+                  <p className="font-medium">{userProfile.dni}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
                 <Phone className="h-6 w-6 text-muted-foreground mt-1" />
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">Teléfono</p>
@@ -605,10 +710,17 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div className="flex items-start gap-4">
+                <User className="h-6 w-6 text-muted-foreground mt-1" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Edad</p>
+                  <p className="font-medium">{userProfile.edad ? `${userProfile.edad} años` : 'No especificado'}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
                 <MapPin className="h-6 w-6 text-muted-foreground mt-1" />
                 <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">Ubicación</p>
-                  <p className="font-medium">{userProfile.location}</p>
+                  <p className="text-sm text-muted-foreground">Dirección</p>
+                  <p className="font-medium">{userProfile.direccion}</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
