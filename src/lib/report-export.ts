@@ -2,6 +2,8 @@ import jsPDF from 'jspdf';
 import ExcelJS from 'exceljs';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { db } from '@/app/management/firebase';
+import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 
 interface ReportData {
   selectedDate: Date;
@@ -19,6 +21,20 @@ interface ReportData {
     name: string;
     utilization: number;
   }>;
+}
+
+interface ServiceRequest {
+  id: string;
+  clientId?: string;
+  destination?: string;
+  driverId?: string;
+  pickupLocation?: string;
+  requestDate?: any;
+  serviceDate?: any;
+  specialRequirements?: string;
+  status?: string;
+  vehicleId?: string;
+  price?: number;
 }
 
 export function exportToPDF(data: ReportData) {
@@ -248,13 +264,70 @@ export function exportToPDF(data: ReportData) {
 }
 
 export async function exportToExcel(data: ReportData) {
+  // Obtener datos reales de Firestore
+  let dailyDetails: ServiceRequest[] = [];
+  try {
+    // Obtener todas las solicitudes y filtrar por fecha
+    const servicesSnapshot = await getDocs(collection(db, 'serviceRequests'));
+    const startOfDay = new Date(data.selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(data.selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    dailyDetails = servicesSnapshot.docs
+      .map(doc => {
+        const docData = doc.data();
+        let requestDate: Date | null = null;
+        
+        // Convertir requestDate a Date si es Timestamp
+        if (docData.requestDate) {
+          if (docData.requestDate instanceof Timestamp) {
+            requestDate = docData.requestDate.toDate();
+          } else if (docData.requestDate.toDate) {
+            requestDate = docData.requestDate.toDate();
+          } else if (typeof docData.requestDate === 'string') {
+            requestDate = new Date(docData.requestDate);
+          }
+        }
+        
+        // Filtrar por fecha del día seleccionado
+        if (requestDate) {
+          const requestDateOnly = new Date(requestDate);
+          requestDateOnly.setHours(0, 0, 0, 0);
+          const selectedDateOnly = new Date(data.selectedDate);
+          selectedDateOnly.setHours(0, 0, 0, 0);
+          
+          // Si la fecha coincide, incluir en los detalles
+          if (requestDateOnly.getTime() === selectedDateOnly.getTime()) {
+            return {
+              id: docData.id || doc.id,
+              clientId: docData.clientId || 'N/A',
+              destination: docData.destination || 'N/A',
+              driverId: docData.driverId || 'N/A',
+              pickupLocation: docData.pickupLocation || 'N/A',
+              requestDate: docData.requestDate,
+              serviceDate: docData.serviceDate,
+              specialRequirements: docData.specialRequirements || '',
+              status: docData.status || 'Pendiente',
+              vehicleId: docData.vehicleId || 'N/A',
+              price: docData.price || 0,
+            };
+          }
+        }
+        return null;
+      })
+      .filter((item): item is ServiceRequest => item !== null);
+  } catch (error) {
+    console.error('Error fetching daily details:', error);
+  }
+
   // Create workbook
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Mewing Transport Manager';
   workbook.created = new Date();
   
-  // Sheet 1: Summary Report
-  const summarySheet = workbook.addWorksheet('Reporte');
+  // Sheet 1: Resumen
+  const summarySheet = workbook.addWorksheet('Resumen');
   
   // Header
   const headerRow1 = summarySheet.addRow(['Mewing Transport Manager', '', '']);
@@ -393,7 +466,73 @@ export async function exportToExcel(data: ReportData) {
   summarySheet.getColumn(2).width = 25;
   summarySheet.getColumn(3).width = 28;
   
-  // Sheet 2: Vehicle Utilization
+  // Sheet 2: Rendimiento
+  const performanceSheet = workbook.addWorksheet('Rendimiento');
+  
+  const perfHeaderRow = performanceSheet.addRow(['Rendimiento del Servicio - Últimos 6 Meses', '', '']);
+  perfHeaderRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+  perfHeaderRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0066CC' } };
+  perfHeaderRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+  performanceSheet.mergeCells(`A${perfHeaderRow.number}:C${perfHeaderRow.number}`);
+  perfHeaderRow.height = 25;
+  
+  performanceSheet.addRow([]);
+  
+  // Table headers
+  const perfTableHeaderRow = performanceSheet.addRow(['Mes', 'Servicios a Tiempo (%)', 'Servicios Retrasados (%)']);
+  perfTableHeaderRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0066CC' } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.border = {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
+  perfTableHeaderRow.height = 20;
+  
+  // Table data
+  data.serviceData.forEach((row) => {
+    const dataRow = performanceSheet.addRow([row.name, Math.round(row.onTime), Math.round(row.delayed)]);
+    dataRow.eachCell((cell, colNumber) => {
+      cell.alignment = { horizontal: 'center' };
+      cell.border = {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      if (colNumber === 2) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F7E6' } };
+        cell.numFmt = '0"%';
+      } else if (colNumber === 3) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE6E6' } };
+        cell.numFmt = '0"%';
+      }
+    });
+    dataRow.height = 18;
+  });
+  
+  // Add chart data for performance
+  performanceSheet.addRow([]);
+  const chartDataRow = performanceSheet.addRow(['Datos para Gráfico', '', '']);
+  chartDataRow.getCell(1).font = { bold: true, size: 12 };
+  performanceSheet.mergeCells(`A${chartDataRow.number}:C${chartDataRow.number}`);
+  
+  // Add note about charts (ExcelJS chart support may vary, data is ready for manual chart creation)
+  performanceSheet.addRow([]);
+  const chartNoteRow = performanceSheet.addRow(['Nota: Los datos están listos para crear gráficos en Excel. Selecciona los datos y usa Insertar > Gráfico.', '', '']);
+  chartNoteRow.getCell(1).font = { italic: true, size: 10, color: { argb: 'FF666666' } };
+  performanceSheet.mergeCells(`A${chartNoteRow.number}:C${chartNoteRow.number}`);
+  
+  // Set column widths
+  performanceSheet.getColumn(1).width = 25;
+  performanceSheet.getColumn(2).width = 25;
+  performanceSheet.getColumn(3).width = 28;
+  
+  // Sheet 3: Utilización
   const utilizationSheet = workbook.addWorksheet('Utilización');
   
   const utilHeaderRow = utilizationSheet.addRow(['Utilización de Vehículos - Última Semana', '']);
@@ -476,9 +615,139 @@ export async function exportToExcel(data: ReportData) {
     dataRow.height = 18;
   });
   
+  // Add note about charts
+  utilizationSheet.addRow([]);
+  const utilChartNoteRow = utilizationSheet.addRow(['Nota: Los datos están listos para crear gráficos en Excel. Selecciona los datos y usa Insertar > Gráfico.', '']);
+  utilChartNoteRow.getCell(1).font = { italic: true, size: 10, color: { argb: 'FF666666' } };
+  utilizationSheet.mergeCells(`A${utilChartNoteRow.number}:B${utilChartNoteRow.number}`);
+  
   // Set column widths
   utilizationSheet.getColumn(1).width = 20;
   utilizationSheet.getColumn(2).width = 20;
+  
+  // Sheet 4: Detalle Diario
+  const dailySheet = workbook.addWorksheet('Detalle Diario');
+  
+  const dailyHeaderRow = dailySheet.addRow(['Detalle Diario de Solicitudes', '', '', '', '', '', '', '', '']);
+  dailyHeaderRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+  dailyHeaderRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0066CC' } };
+  dailyHeaderRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+  dailySheet.mergeCells(`A${dailyHeaderRow.number}:I${dailyHeaderRow.number}`);
+  dailyHeaderRow.height = 25;
+  
+  const dailyDateRow = dailySheet.addRow([`Fecha: ${format(data.selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}`, '', '', '', '', '', '', '', '']);
+  dailyDateRow.getCell(1).font = { bold: true };
+  dailySheet.mergeCells(`A${dailyDateRow.number}:I${dailyDateRow.number}`);
+  
+  dailySheet.addRow([]);
+  
+  // Table headers
+  const dailyTableHeaderRow = dailySheet.addRow([
+    'ID Solicitud',
+    'Cliente',
+    'Origen',
+    'Destino',
+    'Fecha Servicio',
+    'Estado',
+    'Conductor',
+    'Vehículo',
+    'Precio (S/)'
+  ]);
+  dailyTableHeaderRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0066CC' } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
+  dailyTableHeaderRow.height = 25;
+  
+  // Table data
+  if (dailyDetails.length > 0) {
+    dailyDetails.forEach((request) => {
+      const serviceDate = request.serviceDate instanceof Timestamp 
+        ? request.serviceDate.toDate() 
+        : request.serviceDate 
+        ? new Date(request.serviceDate) 
+        : null;
+      
+      const formattedServiceDate = serviceDate 
+        ? format(serviceDate, 'dd/MM/yyyy HH:mm', { locale: es })
+        : 'N/A';
+      
+      const dataRow = dailySheet.addRow([
+        request.id?.length > 8 ? request.id.substring(0, 8) + '...' : request.id || 'N/A',
+        request.clientId || 'N/A',
+        request.pickupLocation || 'N/A',
+        request.destination || 'N/A',
+        formattedServiceDate,
+        request.status || 'Pendiente',
+        request.driverId || 'N/A',
+        request.vehicleId || 'N/A',
+        request.price || 0
+      ]);
+      
+      dataRow.eachCell((cell, colNumber) => {
+        cell.alignment = { horizontal: colNumber === 9 ? 'right' : 'left', vertical: 'middle', wrapText: true };
+        cell.border = {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        if (colNumber === 9) {
+          cell.numFmt = '#,##0.00';
+        }
+      });
+      dataRow.height = 20;
+    });
+  } else {
+    const noDataRow = dailySheet.addRow(['No hay solicitudes para esta fecha', '', '', '', '', '', '', '', '']);
+    dailySheet.mergeCells(`A${noDataRow.number}:I${noDataRow.number}`);
+    noDataRow.getCell(1).alignment = { horizontal: 'center' };
+    noDataRow.getCell(1).font = { italic: true, color: { argb: 'FF666666' } };
+  }
+  
+  // Set column widths
+  dailySheet.getColumn(1).width = 15;
+  dailySheet.getColumn(2).width = 15;
+  dailySheet.getColumn(3).width = 30;
+  dailySheet.getColumn(4).width = 30;
+  dailySheet.getColumn(5).width = 18;
+  dailySheet.getColumn(6).width = 15;
+  dailySheet.getColumn(7).width = 15;
+  dailySheet.getColumn(8).width = 15;
+  dailySheet.getColumn(9).width = 12;
+  
+  // Add summary at the bottom
+  dailySheet.addRow([]);
+  const totalRow = dailySheet.addRow([
+    'TOTAL',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    dailyDetails.reduce((sum, req) => sum + (req.price || 0), 0)
+  ]);
+  totalRow.getCell(1).font = { bold: true, size: 12 };
+  totalRow.getCell(9).font = { bold: true, size: 12 };
+  totalRow.getCell(9).numFmt = '#,##0.00';
+  totalRow.getCell(9).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE6CC' } };
+  totalRow.eachCell((cell) => {
+    cell.border = {
+      top: { style: 'medium' },
+      bottom: { style: 'medium' },
+      left: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
   
   // Save Excel file
   const buffer = await workbook.xlsx.writeBuffer();
